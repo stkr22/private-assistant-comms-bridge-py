@@ -26,6 +26,9 @@ mypy = ">=1.8.0"
 pytest = ">=8.1.1"
 types-pyyaml = "^6.0.12.20240311"
 
+[tool.poetry.scripts]
+private-assistant-comms-bridge = "private_assistant_comms_bridge.main:app"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
