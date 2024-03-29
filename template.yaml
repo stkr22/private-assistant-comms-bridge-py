@@ -1,0 +1,8 @@
+virtual_assistant_room: livingroom
+speech_transcription_api: "http://localhost/transcribe"
+speech_transcription_api_token: "DEBUG"
+speech_synthesis_api: "https://localhost/synthesizeSpeech"
+speech_synthesis_api_token: "DEBUG"
+mqtt_server_host: localhost
+voice_input_device: 5
+voice_output_device: 5
