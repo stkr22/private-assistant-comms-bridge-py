@@ -71,7 +71,9 @@ def start_comms_bridge(config_path: Annotated[pathlib.Path, typer.Argument()]):
     )
 
     mqttc = mqtt.Client(
-        mqtt.CallbackAPIVersion.VERSION2, client_id=config_obj.client_id
+        mqtt.CallbackAPIVersion.VERSION2,
+        client_id=config_obj.client_id,
+        protocol=mqtt.MQTTv5,
     )
     mqttc.on_connect, mqttc.on_message = mqtt_utils.get_mqtt_event_functions(
         config_obj=config_obj, output_queue=output_queue

@@ -1,9 +1,11 @@
 import logging
 import queue
 import threading
+import uuid
 
 import numpy as np
 import paho.mqtt.client as mqtt
+from private_assistant_commons import messages
 
 from private_assistant_comms_bridge.utils import (
     config,
@@ -61,5 +63,14 @@ def processing_spoken_commands(
             )
             logger.debug("Received result...%s", response)
             if response is not None:
-                mqtt_client.publish(config_obj.input_topic, response["text"], qos=2)
+                mqtt_client.publish(
+                    config_obj.input_topic,
+                    messages.ClientRequest(
+                        id=uuid.uuid4(),
+                        text=response["text"],
+                        room=config_obj.virtual_assistant_room,
+                        output_topic=config_obj.output_topic,
+                    ).model_dump_json(),
+                    qos=1,
+                )
                 logger.debug("Published result text to MQTT.")
