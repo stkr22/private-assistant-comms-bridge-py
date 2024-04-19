@@ -27,10 +27,10 @@ def get_mqtt_event_functions(
                 block = block.reshape(-1, 1)
                 output_queue.put(block)
 
-    def on_connect(client, user_data, flags, reason_code, properties):
+    def on_connect(client: mqtt.Client, user_data, flags, reason_code, properties):
         logger.info(f"Connected to MQTT server with result code {reason_code}")
         # Subscribing in on_connect() means that if we lose the connection and
         # reconnect then subscriptions will be renewed.
-        client.subscribe(config_obj.output_topic, mqtt.SubscribeOptions(qos=1))
+        client.subscribe(config_obj.output_topic, options=mqtt.SubscribeOptions(qos=1))
 
     return on_connect, on_message
