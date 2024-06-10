@@ -46,7 +46,9 @@ support_utils = SupportUtils()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model
-    support_utils.config_obj = config.load_config(pathlib.Path("local_config.yaml"))
+    support_utils.config_obj = config.load_config(
+        pathlib.Path(os.getenv("ASSISTANT_API_CONFIG_PATH", "local_config.yaml"))
+    )
     openwakeword.utils.download_models(model_names=["alexa"])
     support_utils.wakeword_model = openwakeword.Model(
         wakeword_models=["alexa"],
