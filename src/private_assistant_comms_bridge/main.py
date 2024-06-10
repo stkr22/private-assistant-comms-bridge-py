@@ -5,20 +5,20 @@ import os
 import pathlib
 import queue
 import sys
-import threading
-from typing import Annotated
+from contextlib import asynccontextmanager
 
 import numpy as np
 import openwakeword  # type: ignore
 import paho.mqtt.client as mqtt
-import sounddevice as sd  # type: ignore
-import typer
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
+from private_assistant_comms_bridge.sounds import sounds
 from private_assistant_comms_bridge.utils import (
+    client_config,
     config,
     mqtt_utils,
-    playing_sound,
     processing_sound,
+    speech_recognition_tools,
 )
 
 # Configure logging
@@ -31,89 +31,114 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-input_passive_queue: queue.Queue = queue.Queue()
-input_active_queue: queue.Queue = queue.Queue()
-output_queue: queue.Queue = queue.Queue()
-played_message: threading.Event = threading.Event()
-active_listening: threading.Event = threading.Event()
+
+class SupportUtils:
+    def __init__(self) -> None:
+        self.config_obj: config.Config | None = None
+        self.wakeword_model: openwakeword.Model | None = None
+        self.mqtt_client: mqtt.Client | None = None
+        self.output_queue: queue.Queue[np.ndarray] | None = None
 
 
-app = typer.Typer()
+support_utils = SupportUtils()
 
 
-def callback(
-    indata: np.ndarray, outdata: np.ndarray, frames: int, time, status: sd.CallbackFlags
-):
-    """This is called (from a separate thread) for each audio block."""
-    if status:
-        logger.info("%s", status)
-    if active_listening.is_set():
-        input_active_queue.put(indata)
-    else:
-        input_passive_queue.put(indata)
-    outdata.fill(
-        0
-    )  # important otherwise it will keep sound from the previous cycle if new_frames is smaller than blocksize
-    try:
-        new_frames: np.ndarray = output_queue.get_nowait()
-        outdata[: new_frames.shape[0]] = new_frames
-    except queue.Empty:
-        played_message.set()
-
-
-@app.command()
-def start_comms_bridge(config_path: Annotated[pathlib.Path, typer.Argument()]):
-    config_obj = config.load_config(config_path)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load the ML model
+    support_utils.config_obj = config.load_config(pathlib.Path("local_config.yaml"))
     openwakeword.utils.download_models(model_names=["alexa"])
-    wakeword_model = openwakeword.Model(
+    support_utils.wakeword_model = openwakeword.Model(
         wakeword_models=["alexa"],
-        enable_speex_noise_suppression=True,
     )
-
-    mqttc = mqtt.Client(
+    support_utils.output_queue = queue.Queue()
+    mqtt_client = mqtt.Client(
         mqtt.CallbackAPIVersion.VERSION2,
-        client_id=config_obj.client_id,
+        client_id=support_utils.config_obj.client_id,
         protocol=mqtt.MQTTv5,
     )
-    mqttc.on_connect, mqttc.on_message = mqtt_utils.get_mqtt_event_functions(
-        config_obj=config_obj, output_queue=output_queue
+    mqtt_client.on_connect, mqtt_client.on_message = (
+        mqtt_utils.get_mqtt_event_functions(
+            config_obj=support_utils.config_obj, output_queue=support_utils.output_queue
+        )
     )
-    mqttc.connect(config_obj.mqtt_server_host, config_obj.mqtt_server_port, 60)
-    mqttc.loop_start()
-    with sd.Stream(
-        samplerate=config_obj.sounddevice_input_samplerate,
-        blocksize=config_obj.blocksize,
-        device=(config_obj.voice_input_device, config_obj.voice_output_device),
-        dtype=np.int16,
-        channels=1,
-        callback=callback,
+    mqtt_client.connect(
+        support_utils.config_obj.mqtt_server_host,
+        support_utils.config_obj.mqtt_server_port,
+        60,
+    )
+    mqtt_client.loop_start()
+    support_utils.mqtt_client = mqtt_client
+    yield
+    # Clean up the ML models and release the resources
+    print(1)
+
+
+app = FastAPI(lifespan=lifespan)
+
+
+@app.get("/health")
+async def health() -> dict:
+    return {"status": "healthy"}
+
+
+@app.websocket("/client_control")
+async def websocket_endpoint(websocket: WebSocket):
+    """Handle WebSocket connections."""
+    await websocket.accept()
+    if (
+        support_utils.config_obj is None
+        or support_utils.mqtt_client is None
+        or support_utils.output_queue is None
+        or support_utils.wakeword_model is None
     ):
+        raise ValueError
+    try:
+        client_config_raw = await websocket.receive_json()
+        client_conf = client_config.ClientConfig.model_validate(client_config_raw)
         while True:
-            wakeword_detected = False
-            raw_audio_data = input_passive_queue.get()
-            prediction = wakeword_model.predict(
-                raw_audio_data.flatten(),
+            try:
+                output_text = support_utils.output_queue.get(block=False)
+                audio_np = await speech_recognition_tools.send_text_to_tts_api(
+                    output_text, support_utils.config_obj, client_conf.samplerate
+                )
+                if audio_np is not None:
+                    await websocket.send_bytes(audio_np.tobytes())
+            except queue.Empty:
+                logger.info("Nothing in queue, continue.")
+            message = await websocket.receive()
+            if "text" in message:
+                text_data = message["text"]
+                if text_data == "ready":
+                    logger.info("Client ready for next command")
+                else:
+                    logger.warning(f"Unexpected text message: {text_data}")
+                    continue
+            if "bytes" not in message:
+                continue
+            raw_audio_data = message["bytes"]
+            audio_data = np.frombuffer(raw_audio_data, dtype=np.int16)
+            prediction = support_utils.wakeword_model.predict(
+                audio_data.flatten(),
                 debounce_time=1.0,
-                threshold={"alexa": config_obj.wakework_detection_threshold},
+                threshold={
+                    "alexa": support_utils.config_obj.wakework_detection_threshold
+                },
             )
-            if prediction["alexa"] >= config_obj.wakework_detection_threshold:
+            if (
+                prediction["alexa"]
+                >= support_utils.config_obj.wakework_detection_threshold
+            ):
                 logger.info("Wakeword detected.")
-                wakeword_detected = True
-                playing_sound.add_start_stop_message_to_output(
-                    start=True, config_obj=config_obj, output_queue=output_queue
+                notification_sound = np.int16(sounds.start_recording * 32767)
+                await websocket.send_bytes(notification_sound.tobytes())
+                await processing_sound.processing_spoken_commands(
+                    websocket=websocket,
+                    config_obj=support_utils.config_obj,
+                    mqtt_client=support_utils.mqtt_client,
+                    client_conf=client_conf,
                 )
-                played_message.clear()
-            if wakeword_detected is True:
-                played_message.wait(timeout=5.0)
-                active_listening.set()
-                processing_sound.processing_spoken_commands(
-                    config_obj=config_obj,
-                    output_queue=output_queue,
-                    mqtt_client=mqttc,
-                    input_active_queue=input_active_queue,
-                    active_listening=active_listening,
-                )
-
-
-if __name__ == "__main__":
-    start_comms_bridge(config_path=pathlib.Path("./template.yaml"))
+            else:
+                logger.debug("No wake word detected")
+    except WebSocketDisconnect:
+        logger.info("Client disconnected")

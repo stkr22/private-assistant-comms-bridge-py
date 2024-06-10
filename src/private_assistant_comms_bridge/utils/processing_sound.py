@@ -1,40 +1,50 @@
 import logging
-import queue
-import threading
 import uuid
 
 import numpy as np
 import paho.mqtt.client as mqtt
+from fastapi import WebSocket
 from private_assistant_commons import messages
 
+from private_assistant_comms_bridge.sounds import sounds
 from private_assistant_comms_bridge.utils import (
+    client_config,
     config,
-    playing_sound,
     speech_recognition_tools,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def processing_spoken_commands(
+async def processing_spoken_commands(
+    websocket: WebSocket,
     config_obj: config.Config,
-    output_queue: queue.Queue,
     mqtt_client: mqtt.Client,
-    input_active_queue: queue.Queue,
-    active_listening: threading.Event,
+    client_conf: client_config.ClientConfig,
 ) -> None:
     silence_packages = 0
-    # Window should correspond to the number/split parts of a second
-    # one block corresponds to
-    max_frames = (
-        config_obj.max_command_input_seconds * config_obj.sounddevice_input_samplerate
-    )
-    previous_frame = np.empty(shape=[config_obj.blocksize, 1], dtype=np.int16)
+    previous_frame = np.empty(shape=[client_conf.chunk_size, 1], dtype=np.int16)
+    max_frames = config_obj.max_command_input_seconds * client_conf.samplerate
+    max_silent_packages = client_conf.samplerate / client_conf.chunk_size
     audio_frames = None
-    while active_listening.is_set():
-        raw_data = input_active_queue.get()
+    active_listening = True
+    client_ready = False
+    while not client_ready:
+        message = await websocket.receive()
+        if "text" in message:
+            text_data = message["text"]
+            if text_data == "ready":
+                logger.info(
+                    "Received %s from client, starting active listening", text_data
+                )
+                client_ready = True
+        else:
+            continue
+    while active_listening:
+        audio_bytes = await websocket.receive_bytes()
+        raw_audio_data = np.frombuffer(audio_bytes, dtype=np.int16)
         speech_prob, data = speech_recognition_tools.format_audio_and_speech_prob(
-            raw_data, config_obj=config_obj
+            raw_audio_data, input_samplerate=client_conf.samplerate
         )
         if speech_prob > config_obj.vad_threshold:
             silence_packages = 0
@@ -50,15 +60,15 @@ def processing_spoken_commands(
             previous_frame = data
             logger.debug("No voice...")
         if audio_frames is not None and (
-            audio_frames.shape[0] > max_frames or silence_packages >= 2
+            audio_frames.shape[0] > max_frames
+            or silence_packages >= max_silent_packages
         ):
-            active_listening.clear()
-            playing_sound.add_start_stop_message_to_output(
-                start=False, config_obj=config_obj, output_queue=output_queue
-            )
+            active_listening = False
+            notification_sound = np.int16(sounds.stop_recording * 32767)
+            await websocket.send_bytes(notification_sound.tobytes())
             audio_base64 = speech_recognition_tools.numpy_array_to_base64(audio_frames)
             logger.debug("Requested transcription...")
-            response = speech_recognition_tools.send_audio_to_stt_api(
+            response = await speech_recognition_tools.send_audio_to_stt_api(
                 audio_base64, audio_frames.dtype.name, config_obj=config_obj
             )
             logger.debug("Received result...%s", response)
@@ -68,7 +78,7 @@ def processing_spoken_commands(
                     messages.ClientRequest(
                         id=uuid.uuid4(),
                         text=response["text"],
-                        room=config_obj.virtual_assistant_room,
+                        room=client_conf.room,
                         output_topic=config_obj.output_topic,
                     ).model_dump_json(),
                     qos=1,
