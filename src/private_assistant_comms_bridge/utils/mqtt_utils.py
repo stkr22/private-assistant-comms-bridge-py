@@ -6,8 +6,6 @@ import paho.mqtt.client as mqtt
 
 from private_assistant_comms_bridge.utils import (
     config,
-    playing_sound,
-    speech_recognition_tools,
 )
 
 logger = logging.getLogger(__name__)
@@ -17,15 +15,7 @@ def get_mqtt_event_functions(
     config_obj: config.Config, output_queue: queue.Queue
 ) -> tuple[Callable, Callable]:
     def on_message(client, user_data, msg):
-        audio_np = speech_recognition_tools.send_text_to_tts_api(
-            msg.payload.decode("utf-8"), config_obj
-        )
-        if audio_np is not None:
-            for block in playing_sound.split_array_into_blocks(
-                audio_np, config_obj.blocksize
-            ):
-                block = block.reshape(-1, 1)
-                output_queue.put(block)
+        output_queue.put(msg.payload.decode("utf-8"))
 
     def on_connect(client: mqtt.Client, user_data, flags, reason_code, properties):
         logger.info(f"Connected to MQTT server with result code {reason_code}")

@@ -5,26 +5,28 @@ description = "Comms Bridge is an open-source endpoint designed to facilitate sp
 authors = ["stkr22 <stkr22@github.com>"]
 readme = "README.md"
 license = "MIT"
-include = ["src"]
 
 [tool.poetry.dependencies]
 python = ">=3.11,<3.12"
-librosa = "^0.10.1"
-paho-mqtt = "^2.0.0"
+librosa = "^0.10.2.post1"
+paho-mqtt = "^2.1.0"
 openwakeword = "^0.6.0"
 httpx = "^0.27.0"
 pyyaml = "^6.0.1"
-pydantic = "^2.6.4"
-typer = {version = "0.9.0", extras = ["all"]}
-sounddevice = "^0.4.6"
-torchaudio = "^2.2.2"
-speexdsp-ns = "^0.1.2"
+pydantic = "^2.7.3"
+typer = {extras = ["all"], version = "^0.12.3"}
+torchaudio = "^2.3.1"
 private-assistant-commons = "^0.1.0"
+websockets = "^12.0"
+aiortc = "^1.9.0"
+aiohttp = "^3.9.5"
+fastapi = "^0.111.0"
+speexdsp-ns = "^0.1.2"
 
 [tool.poetry.group.dev.dependencies]
-ruff = ">=0.3.4"
-mypy = ">=1.8.0"
-pytest = ">=8.1.1"
+ruff = "^0.4.8"
+mypy = "^1.10.0"
+pytest = "^8.2.2"
 types-pyyaml = "^6.0.12.20240311"
 
 [tool.poetry.scripts]

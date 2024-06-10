@@ -21,7 +21,7 @@ vad_model, utils = torch.hub.load(
 )
 
 
-def numpy_array_to_base64(audio_data):
+def numpy_array_to_base64(audio_data: np.ndarray):
     """Convert a numpy array to a base64 encoded string."""
     audio_bytes = audio_data.tobytes()
     base64_bytes = base64.b64encode(audio_bytes)
@@ -30,16 +30,17 @@ def numpy_array_to_base64(audio_data):
 
 
 def format_audio_and_speech_prob(
-    audio_frames: np.ndarray, config_obj: config.Config
+    audio_frames: np.ndarray, input_samplerate: int
 ) -> tuple[int, np.ndarray]:
-    samplerate = config_obj.sounddevice_input_samplerate
     audio_data = audio_frames.flatten().astype(np.float32) / 32768.0
-    speech_prob = vad_model(torch.from_numpy(audio_data.copy()), samplerate).item()
+    speech_prob = vad_model(
+        torch.from_numpy(audio_data.copy()), input_samplerate
+    ).item()
     return speech_prob, audio_data
 
 
-def send_audio_to_stt_api(
-    audio_base64, dtype, config_obj: config.Config
+async def send_audio_to_stt_api(
+    audio_base64: str, dtype: str, config_obj: config.Config
 ) -> dict | None:
     """Send the recorded audio to the FastAPI server."""
     url = config_obj.speech_transcription_api
@@ -48,8 +49,8 @@ def send_audio_to_stt_api(
         "dtype": dtype,
     }
     try:
-        with httpx.Client() as client:
-            response = client.post(
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
                 url,
                 json=payload,
                 headers={"user-token": config_obj.speech_transcription_api_token or ""},
@@ -62,14 +63,16 @@ def send_audio_to_stt_api(
     return None
 
 
-def send_text_to_tts_api(text: str, config_obj: config.Config) -> np.ndarray | None:
+async def send_text_to_tts_api(
+    text: str, config_obj: config.Config, input_samplerate: int
+) -> np.ndarray | None:
     json_data = {
-        "samplerate": config_obj.sounddevice_output_samplerate,
+        "samplerate": input_samplerate,
         "text": text,
     }
     try:
-        with httpx.Client() as client:
-            response = client.post(
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
                 config_obj.speech_synthesis_api,
                 json=json_data,
                 headers={"user-token": config_obj.speech_synthesis_api_token or ""},
