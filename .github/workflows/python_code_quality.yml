@@ -28,7 +28,7 @@ jobs:
           poetry install
 
       - name: Run Ruff
-        run: ruff check --output-format=github .
+        run: ruff check --output-format=github ./src
 
   type-check:
     runs-on: ubuntu-latest
@@ -52,7 +52,7 @@ jobs:
           poetry install
 
       - name: Run Mypy (Type Checker)
-        run: mypy --pretty .
+        run: mypy --pretty ./src
 
 
   tests:
