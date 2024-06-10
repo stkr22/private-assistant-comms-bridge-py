@@ -37,7 +37,7 @@ class SupportUtils:
         self.config_obj: config.Config | None = None
         self.wakeword_model: openwakeword.Model | None = None
         self.mqtt_client: mqtt.Client | None = None
-        self.output_queue: queue.Queue[np.ndarray] | None = None
+        self.output_queue: queue.Queue[str] | None = None
 
 
 support_utils = SupportUtils()
