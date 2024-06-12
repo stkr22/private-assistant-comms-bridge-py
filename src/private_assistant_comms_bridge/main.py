@@ -19,6 +19,7 @@ from private_assistant_comms_bridge.utils import (
     mqtt_utils,
     processing_sound,
     speech_recognition_tools,
+    support_utils,
 )
 
 # Configure logging
@@ -32,45 +33,34 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-class SupportUtils:
-    def __init__(self) -> None:
-        self.config_obj: config.Config | None = None
-        self.wakeword_model: openwakeword.Model | None = None
-        self.mqtt_client: mqtt.Client | None = None
-        self.output_queue: queue.Queue[str] | None = None
-
-
-support_utils = SupportUtils()
+sup_util = support_utils.SupportUtils()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model
-    support_utils.config_obj = config.load_config(
+    sup_util.config_obj = config.load_config(
         pathlib.Path(os.getenv("ASSISTANT_API_CONFIG_PATH", "local_config.yaml"))
     )
     openwakeword.utils.download_models(model_names=["alexa"])
-    support_utils.wakeword_model = openwakeword.Model(
+    sup_util.wakeword_model = openwakeword.Model(
         wakeword_models=["alexa"],
     )
-    support_utils.output_queue = queue.Queue()
     mqtt_client = mqtt.Client(
         mqtt.CallbackAPIVersion.VERSION2,
-        client_id=support_utils.config_obj.client_id,
+        client_id=sup_util.config_obj.client_id,
         protocol=mqtt.MQTTv5,
     )
     mqtt_client.on_connect, mqtt_client.on_message = (
-        mqtt_utils.get_mqtt_event_functions(
-            config_obj=support_utils.config_obj, output_queue=support_utils.output_queue
-        )
+        mqtt_utils.get_mqtt_event_functions(sup_util=sup_util)
     )
     mqtt_client.connect(
-        support_utils.config_obj.mqtt_server_host,
-        support_utils.config_obj.mqtt_server_port,
+        sup_util.config_obj.mqtt_server_host,
+        sup_util.config_obj.mqtt_server_port,
         60,
     )
     mqtt_client.loop_start()
-    support_utils.mqtt_client = mqtt_client
+    sup_util.mqtt_client = mqtt_client
     yield
     # Clean up the ML models and release the resources
     print(1)
@@ -89,20 +79,25 @@ async def websocket_endpoint(websocket: WebSocket):
     """Handle WebSocket connections."""
     await websocket.accept()
     if (
-        support_utils.config_obj is None
-        or support_utils.mqtt_client is None
-        or support_utils.output_queue is None
-        or support_utils.wakeword_model is None
+        sup_util.config_obj is None
+        or sup_util.mqtt_client is None
+        or sup_util.wakeword_model is None
     ):
         raise ValueError
     try:
         client_config_raw = await websocket.receive_json()
         client_conf = client_config.ClientConfig.model_validate(client_config_raw)
+        output_queue: queue.Queue[str] = queue.Queue()
+        output_topic = f"assistant/{client_conf.room}/output"
+        sup_util.mqtt_subscription_to_queue[output_topic] = output_queue
+        sup_util.mqtt_client.subscribe(
+            output_topic, options=mqtt.SubscribeOptions(qos=1)
+        )
         while True:
             try:
-                output_text = support_utils.output_queue.get(block=False)
+                output_text = output_queue.get(block=False)
                 audio_np = await speech_recognition_tools.send_text_to_tts_api(
-                    output_text, support_utils.config_obj, client_conf.samplerate
+                    output_text, sup_util.config_obj, client_conf.samplerate
                 )
                 if audio_np is not None:
                     await websocket.send_bytes(audio_np.tobytes())
@@ -120,24 +115,19 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             raw_audio_data = message["bytes"]
             audio_data = np.frombuffer(raw_audio_data, dtype=np.int16)
-            prediction = support_utils.wakeword_model.predict(
+            prediction = sup_util.wakeword_model.predict(
                 audio_data.flatten(),
                 debounce_time=1.0,
-                threshold={
-                    "alexa": support_utils.config_obj.wakework_detection_threshold
-                },
+                threshold={"alexa": sup_util.config_obj.wakework_detection_threshold},
             )
-            if (
-                prediction["alexa"]
-                >= support_utils.config_obj.wakework_detection_threshold
-            ):
+            if prediction["alexa"] >= sup_util.config_obj.wakework_detection_threshold:
                 logger.info("Wakeword detected.")
                 notification_sound = np.int16(sounds.start_recording * 32767)
                 await websocket.send_bytes(notification_sound.tobytes())
                 await processing_sound.processing_spoken_commands(
                     websocket=websocket,
-                    config_obj=support_utils.config_obj,
-                    mqtt_client=support_utils.mqtt_client,
+                    config_obj=sup_util.config_obj,
+                    mqtt_client=sup_util.mqtt_client,
                     client_conf=client_conf,
                 )
             else:
