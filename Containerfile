@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 ENV PYTHONUNBUFFERED 1
 
@@ -12,12 +12,6 @@ RUN pip install /tmp/${WHEEL_FILE} && \
     rm /tmp/${WHEEL_FILE}
 
 RUN apt-get update && apt-get install -y libsndfile1
-
-# Create a non-root user and switch to it
-RUN groupadd -r apiuser && useradd -r -m -g apiuser apiuser
-
-# Switch to the non-root user
-USER apiuser
 
 EXPOSE 80
 
