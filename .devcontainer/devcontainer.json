@@ -10,7 +10,8 @@
 				"christian-kohler.path-intellisense",
 				"charliermarsh.ruff",
 				"ms-python.mypy-type-checker",
-				"tamasfe.even-better-toml"
+				"tamasfe.even-better-toml",
+				"oderwat.indent-rainbow"
 			]
 		}
 	},
