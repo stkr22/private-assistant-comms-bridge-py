@@ -89,6 +89,7 @@ async def websocket_endpoint(websocket: WebSocket):
         client_conf = client_config.ClientConfig.model_validate(client_config_raw)
         output_queue: queue.Queue[str] = queue.Queue()
         output_topic = f"assistant/{client_conf.room}/output"
+        client_conf.output_topic = output_topic
         sup_util.mqtt_subscription_to_queue[output_topic] = output_queue
         sup_util.mqtt_client.subscribe(
             output_topic, options=mqtt.SubscribeOptions(qos=1)

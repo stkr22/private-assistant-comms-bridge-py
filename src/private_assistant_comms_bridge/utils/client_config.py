@@ -6,3 +6,4 @@ class ClientConfig(BaseModel):
     channels: int
     chunk_size: int
     room: str
+    output_topic: str = ""

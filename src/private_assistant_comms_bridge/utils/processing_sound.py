@@ -79,7 +79,7 @@ async def processing_spoken_commands(
                         id=uuid.uuid4(),
                         text=response["text"],
                         room=client_conf.room,
-                        output_topic=config_obj.output_topic,
+                        output_topic=client_conf.output_topic,
                     ).model_dump_json(),
                     qos=1,
                 )

@@ -13,6 +13,7 @@ def get_mqtt_event_functions(
 ) -> tuple[Callable, Callable]:
     def on_message(client: mqtt.Client, user_data, message: mqtt.MQTTMessage):
         topic_queue = sup_util.mqtt_subscription_to_queue.get(message.topic)
+        logger.debug("Received message: %s", message)
         if topic_queue is None:
             logger.warning(
                 "%s seems to have no queue. Discarding message.", message.topic
