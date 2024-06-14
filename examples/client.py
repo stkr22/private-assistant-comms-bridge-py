@@ -18,6 +18,8 @@ logger = logging.getLogger()
 # Configuration for audio capture and playback
 # chunk size should be 1/10 of samplerate otherwise silero vad might not work properly
 config = {"samplerate": 16000, "channels": 1, "chunk_size": 1600, "room": "bedroom"}
+OUTPUT_DEVICE_INDEX = 1
+INPUT_DEVICE_INDEX = 1
 
 
 async def send_audio_data(websocket, audio_data):
@@ -83,6 +85,7 @@ def main(uri="ws://192.168.178.20:8000/client_control"):
         rate=config["samplerate"],
         input=True,
         frames_per_buffer=config["chunk_size"],
+        input_device_index=INPUT_DEVICE_INDEX,
     )
 
     # Open audio output stream
@@ -91,6 +94,7 @@ def main(uri="ws://192.168.178.20:8000/client_control"):
         channels=config["channels"],
         rate=config["samplerate"],
         output=True,
+        output_device_index=OUTPUT_DEVICE_INDEX,
     )
 
     try:
