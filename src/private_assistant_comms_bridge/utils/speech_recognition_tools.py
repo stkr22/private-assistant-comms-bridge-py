@@ -29,14 +29,21 @@ def numpy_array_to_base64(audio_data: np.ndarray):
     return base64_string
 
 
+def int2float(sound: np.ndarray):
+    abs_max = np.abs(sound).max()
+    sound = sound.astype(np.float32)
+    if abs_max > 0:
+        sound *= 1 / 32768
+    sound = sound.squeeze()  # depends on the use case
+    return sound
+
+
 def format_audio_and_speech_prob(
     audio_frames: np.ndarray, input_samplerate: int
 ) -> tuple[int, np.ndarray]:
-    audio_data = audio_frames.flatten().astype(np.float32) / 32768.0
-    speech_prob = vad_model(
-        torch.from_numpy(audio_data.copy()), input_samplerate
-    ).item()
-    return speech_prob, audio_data
+    audio_float32 = int2float(audio_frames)
+    speech_prob = vad_model(torch.from_numpy(audio_float32), input_samplerate).item()
+    return speech_prob, audio_float32
 
 
 async def send_audio_to_stt_api(

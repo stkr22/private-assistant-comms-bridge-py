@@ -16,7 +16,8 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 # Configuration for audio capture and playback
-config = {"samplerate": 16000, "channels": 1, "chunk_size": 2000, "room": "bedroom"}
+# chunk size should be 1/10 of samplerate otherwise silero vad might not work properly
+config = {"samplerate": 16000, "channels": 1, "chunk_size": 1600, "room": "bedroom"}
 
 
 async def send_audio_data(websocket, audio_data):

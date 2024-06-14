@@ -102,7 +102,7 @@ async def websocket_endpoint(websocket: WebSocket):
                 if audio_np is not None:
                     await websocket.send_bytes(audio_np.tobytes())
             except queue.Empty:
-                logger.info("Nothing in queue, continue.")
+                logger.debug("Nothing in queue, continue.")
             message = await websocket.receive()
             if "text" in message:
                 text_data = message["text"]
@@ -115,22 +115,34 @@ async def websocket_endpoint(websocket: WebSocket):
                 continue
             raw_audio_data = message["bytes"]
             audio_data = np.frombuffer(raw_audio_data, dtype=np.int16)
-            prediction = sup_util.wakeword_model.predict(
-                audio_data.flatten(),
-                debounce_time=1.0,
-                threshold={"alexa": sup_util.config_obj.wakework_detection_threshold},
+            speech_prob, data = speech_recognition_tools.format_audio_and_speech_prob(
+                audio_data, input_samplerate=client_conf.samplerate
             )
-            if prediction["alexa"] >= sup_util.config_obj.wakework_detection_threshold:
-                logger.info("Wakeword detected.")
-                notification_sound = np.int16(sounds.start_recording * 32767)
-                await websocket.send_bytes(notification_sound.tobytes())
-                await processing_sound.processing_spoken_commands(
-                    websocket=websocket,
-                    config_obj=sup_util.config_obj,
-                    mqtt_client=sup_util.mqtt_client,
-                    client_conf=client_conf,
+            logger.debug("Speech prob: %s.", speech_prob)
+            speech_prob = 1
+            if speech_prob >= sup_util.config_obj.vad_threshold:
+                prediction = sup_util.wakeword_model.predict(
+                    audio_data.flatten(),
+                    debounce_time=1.0,
+                    threshold={
+                        "alexa": sup_util.config_obj.wakework_detection_threshold
+                    },
                 )
-            else:
-                logger.debug("No wake word detected")
+                logger.debug("Wakeword prob: %s.", prediction["alexa"])
+                if (
+                    prediction["alexa"]
+                    >= sup_util.config_obj.wakework_detection_threshold
+                ):
+                    logger.info("Wakeword detected.")
+                    notification_sound = np.int16(sounds.start_recording * 32767)
+                    await websocket.send_bytes(notification_sound.tobytes())
+                    await processing_sound.processing_spoken_commands(
+                        websocket=websocket,
+                        config_obj=sup_util.config_obj,
+                        mqtt_client=sup_util.mqtt_client,
+                        client_conf=client_conf,
+                    )
+                else:
+                    logger.debug("No wake word detected")
     except WebSocketDisconnect:
         logger.info("Client disconnected")
