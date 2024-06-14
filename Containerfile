@@ -11,6 +11,8 @@ COPY dist/${WHEEL_FILE} /tmp/${WHEEL_FILE}
 RUN pip install /tmp/${WHEEL_FILE} && \
     rm /tmp/${WHEEL_FILE}
 
+RUN apt-get install libsndfile1
+
 # Create a non-root user and switch to it
 RUN groupadd -r apiuser && useradd -r -m -g apiuser apiuser
 
