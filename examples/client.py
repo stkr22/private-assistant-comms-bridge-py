@@ -22,23 +22,14 @@ OUTPUT_DEVICE_INDEX = 1
 INPUT_DEVICE_INDEX = 1
 
 
-async def send_audio_data(websocket, audio_data):
-    try:
-        await websocket.send(audio_data)
-    except Exception as e:
-        logger.error(f"Error sending audio data: {e}")
-
-
 async def send_audio(websocket: websockets.WebSocketClientProtocol, stream_input):
     """Async function to send audio data to the server."""
-    semaphore = asyncio.Semaphore(10)  # Limit to 10 concurrent send tasks
     while True:
-        async with semaphore:
-            # Read audio data from the stream
-            audio_data = stream_input.read(
-                config["chunk_size"], exception_on_overflow=False
-            )
-            asyncio.create_task(send_audio_data(websocket, audio_data))
+        # Read audio data from the stream
+        audio_data = stream_input.read(
+            config["chunk_size"], exception_on_overflow=False
+        )
+        await websocket.send(audio_data)
         await asyncio.sleep(0)  # Yield control
 
 
