@@ -25,7 +25,11 @@ async def processing_spoken_commands(
     silence_packages = 0
     previous_frame = np.empty(shape=[client_conf.chunk_size, 1], dtype=np.int16)
     max_frames = config_obj.max_command_input_seconds * client_conf.samplerate
-    max_silent_packages = client_conf.samplerate / client_conf.chunk_size
+    max_silent_packages = (
+        client_conf.samplerate
+        / client_conf.chunk_size
+        * config_obj.max_length_speech_pause
+    )
     audio_frames = None
     active_listening = True
     client_ready = False

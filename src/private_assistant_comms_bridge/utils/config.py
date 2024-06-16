@@ -16,6 +16,7 @@ class Config(BaseModel):
     speech_synthesis_api_token: str | None = None
     client_id: str = socket.gethostname()
     max_command_input_seconds: int = 15
+    max_length_speech_pause: float = 0.5
     vad_threshold: float = 0.7
     mqtt_server_host: str = "localhost"
     mqtt_server_port: int = 1883
