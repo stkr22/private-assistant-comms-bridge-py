@@ -23,7 +23,6 @@ async def processing_spoken_commands(
     client_conf: client_config.ClientConfig,
 ) -> None:
     silence_packages = 0
-    previous_frame = np.empty(shape=[client_conf.chunk_size, 1], dtype=np.int16)
     max_frames = config_obj.max_command_input_seconds * client_conf.samplerate
     max_silent_packages = (
         client_conf.samplerate
@@ -53,7 +52,7 @@ async def processing_spoken_commands(
         if speech_prob > config_obj.vad_threshold:
             silence_packages = 0
             if audio_frames is None:
-                audio_frames = np.concatenate((previous_frame, data), axis=0)
+                audio_frames = data
             else:
                 audio_frames = np.concatenate((audio_frames, data), axis=0)
             logger.debug("Received voice...")
@@ -61,7 +60,6 @@ async def processing_spoken_commands(
             if audio_frames is not None:
                 audio_frames = np.concatenate((audio_frames, data), axis=0)
                 silence_packages += 1
-            previous_frame = data
             logger.debug("No voice...")
         if audio_frames is not None and (
             audio_frames.shape[0] > max_frames
