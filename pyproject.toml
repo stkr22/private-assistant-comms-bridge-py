@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "private-assistant-comms-bridge"
-version = "1.0.5"
+version = "1.0.6"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = ["stkr22 <stkr22@github.com>"]
 readme = "README.md"
