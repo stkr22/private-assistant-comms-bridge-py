@@ -19,8 +19,5 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "yaml.schemas": {
-        "https://json.schemastore.org/yamllint.json": "file:///home/stk/gits/private-assistant-comms-bridge-py/template.yaml"
-    },
     "remote.localPortHost": "allInterfaces"
 }
