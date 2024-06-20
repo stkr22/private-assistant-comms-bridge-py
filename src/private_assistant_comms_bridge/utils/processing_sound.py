@@ -6,7 +6,6 @@ import paho.mqtt.client as mqtt
 from fastapi import WebSocket
 from private_assistant_commons import messages
 
-from private_assistant_comms_bridge.sounds import sounds
 from private_assistant_comms_bridge.utils import (
     client_config,
     config,
@@ -31,18 +30,6 @@ async def processing_spoken_commands(
     )
     audio_frames = None
     active_listening = True
-    client_ready = False
-    while not client_ready:
-        message = await websocket.receive()
-        if "text" in message:
-            text_data = message["text"]
-            if text_data == "ready":
-                logger.info(
-                    "Received %s from client, starting active listening", text_data
-                )
-                client_ready = True
-        else:
-            continue
     while active_listening:
         audio_bytes = await websocket.receive_bytes()
         raw_audio_data = np.frombuffer(audio_bytes, dtype=np.int16)
@@ -66,8 +53,7 @@ async def processing_spoken_commands(
             or silence_packages >= max_silent_packages
         ):
             active_listening = False
-            notification_sound = np.int16(sounds.stop_recording * 32767)
-            await websocket.send_bytes(notification_sound.tobytes())
+            await websocket.send_text("stop_listening")
             audio_base64 = speech_recognition_tools.numpy_array_to_base64(audio_frames)
             logger.debug("Requested transcription...")
             response = await speech_recognition_tools.send_audio_to_stt_api(

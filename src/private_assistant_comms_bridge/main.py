@@ -12,7 +12,6 @@ import openwakeword  # type: ignore
 import paho.mqtt.client as mqtt
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 
-from private_assistant_comms_bridge.sounds import sounds
 from private_assistant_comms_bridge.utils import (
     client_config,
     config,
@@ -135,8 +134,7 @@ async def websocket_endpoint(websocket: WebSocket):
                     >= sup_util.config_obj.wakework_detection_threshold
                 ):
                     logger.info("Wakeword detected.")
-                    notification_sound = np.int16(sounds.start_recording * 32767)
-                    await websocket.send_bytes(notification_sound.tobytes())
+                    await websocket.send_text("start_listening")
                     await processing_sound.processing_spoken_commands(
                         websocket=websocket,
                         config_obj=sup_util.config_obj,
