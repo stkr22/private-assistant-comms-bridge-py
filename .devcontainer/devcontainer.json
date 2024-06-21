@@ -22,5 +22,5 @@
 		"HOME": "/home/vscode",
 		"POETRY_VIRTUALENVS_IN_PROJECT": "true"
 	},
-	"postCreateCommand": "pip install --user poetry pre-commit && pre-commit install && poetry install"
+	"postCreateCommand": "pip install --user poetry pre-commit && sudo bash scripts/install_dependencies.sh && pre-commit install && poetry install"
 }
