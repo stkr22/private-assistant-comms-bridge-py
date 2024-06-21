@@ -44,6 +44,7 @@ async def lifespan(app: FastAPI):
     openwakeword.utils.download_models(model_names=["alexa"])
     sup_util.wakeword_model = openwakeword.Model(
         wakeword_models=["alexa"],
+        enable_speex_noise_suppression=True,
     )
     mqtt_client = mqtt.Client(
         mqtt.CallbackAPIVersion.VERSION2,
