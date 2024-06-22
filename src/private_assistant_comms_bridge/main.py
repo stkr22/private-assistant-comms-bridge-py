@@ -98,7 +98,7 @@ async def websocket_endpoint(websocket: WebSocket):
             try:
                 output_text = output_queue.get(block=False)
                 audio_np = await speech_recognition_tools.send_text_to_tts_api(
-                    output_text, sup_util.config_obj, client_conf.samplerate
+                    output_text, sup_util.config_obj
                 )
                 if audio_np is not None:
                     await websocket.send_bytes(audio_np.tobytes())

@@ -1,4 +1,3 @@
-import base64
 import logging
 
 import httpx
@@ -60,24 +59,25 @@ async def send_audio_to_stt_api(
 
 
 async def send_text_to_tts_api(
-    text: str, config_obj: config.Config, input_samplerate: int
-) -> np.ndarray | None:
-    json_data = {
-        "samplerate": input_samplerate,
-        "text": text,
-    }
+    text: str, config_obj: config.Config
+) -> np_typing.NDArray[np.int16] | None:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 config_obj.speech_synthesis_api,
-                json=json_data,
+                json={"text": text},  # Use form data to send the text
                 headers={"user-token": config_obj.speech_synthesis_api_token or ""},
                 timeout=10.0,
             )
             response.raise_for_status()
-            response_json = response.json()
-        audio_bytes = base64.b64decode(response_json["audio_base64"])
-        return np.frombuffer(audio_bytes, dtype=response_json["dtype"])
+
+            # Read the streaming response content
+            audio_bytes = b""
+            async for chunk in response.aiter_bytes():
+                audio_bytes += chunk
+
+            # Convert the binary audio data to a NumPy array
+            return np.frombuffer(audio_bytes, dtype=np.int16)  # Adjust dtype as needed
     except httpx.HTTPError as errh:
-        logger.error("Http Error: %s", errh)
+        logger.error("HTTP Error: %s", errh)
     return None
