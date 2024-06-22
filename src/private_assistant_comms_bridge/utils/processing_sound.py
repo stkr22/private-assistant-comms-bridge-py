@@ -54,10 +54,9 @@ async def processing_spoken_commands(
         ):
             active_listening = False
             await websocket.send_text("stop_listening")
-            audio_base64 = speech_recognition_tools.numpy_array_to_base64(audio_frames)
             logger.debug("Requested transcription...")
             response = await speech_recognition_tools.send_audio_to_stt_api(
-                audio_base64, audio_frames.dtype.name, config_obj=config_obj
+                audio_frames, config_obj=config_obj
             )
             logger.debug("Received result...%s", response)
             if response is not None:
