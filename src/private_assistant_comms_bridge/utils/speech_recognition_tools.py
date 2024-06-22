@@ -3,6 +3,7 @@ import logging
 
 import httpx
 import numpy as np
+import numpy.typing as np_typing
 import torch
 
 from private_assistant_comms_bridge.utils import (
@@ -21,15 +22,7 @@ vad_model, utils = torch.hub.load(
 )
 
 
-def numpy_array_to_base64(audio_data: np.ndarray):
-    """Convert a numpy array to a base64 encoded string."""
-    audio_bytes = audio_data.tobytes()
-    base64_bytes = base64.b64encode(audio_bytes)
-    base64_string = base64_bytes.decode("utf-8")
-    return base64_string
-
-
-def int2float(sound: np.ndarray):
+def int2float(sound: np_typing.NDArray[np.int16]) -> np_typing.NDArray[np.float32]:
     abs_max = np.abs(sound).max()
     sound = sound.astype(np.float32)
     if abs_max > 0:
@@ -39,27 +32,23 @@ def int2float(sound: np.ndarray):
 
 
 def format_audio_and_speech_prob(
-    audio_frames: np.ndarray, input_samplerate: int
-) -> tuple[int, np.ndarray]:
+    audio_frames: np_typing.NDArray[np.int16], input_samplerate: int
+) -> tuple[int, np_typing.NDArray[np.float32]]:
     audio_float32 = int2float(audio_frames)
     speech_prob = vad_model(torch.from_numpy(audio_float32), input_samplerate).item()
     return speech_prob, audio_float32
 
 
 async def send_audio_to_stt_api(
-    audio_base64: str, dtype: str, config_obj: config.Config
+    audio_data: np_typing.NDArray[np.float32], config_obj: config.Config
 ) -> dict | None:
-    """Send the recorded audio to the FastAPI server."""
-    url = config_obj.speech_transcription_api
-    payload = {
-        "audio_base64": audio_base64,
-        "dtype": dtype,
-    }
+    """Send the recorded audio to the stt batch api server."""
+    files = {"file": ("audio.raw", audio_data.tobytes())}
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
-                url,
-                json=payload,
+                config_obj.speech_transcription_api,
+                files=files,
                 headers={"user-token": config_obj.speech_transcription_api_token or ""},
                 timeout=10.0,
             )
