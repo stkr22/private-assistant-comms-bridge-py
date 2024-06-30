@@ -9,15 +9,15 @@ logger = logging.getLogger(__name__)
 
 
 class Config(BaseModel):
-    wakework_detection_threshold: float = 0.9
+    wakework_detection_threshold: float = 0.8
     speech_transcription_api: str = "http://localhost:8000/transcribe"
     speech_transcription_api_token: str | None = None
     speech_synthesis_api: str = "http://localhost:8080/synthesizeSpeech"
     speech_synthesis_api_token: str | None = None
     client_id: str = socket.gethostname()
     max_command_input_seconds: int = 15
-    max_length_speech_pause: float = 0.5
-    vad_threshold: float = 0.7
+    max_length_speech_pause: float = 1
+    vad_threshold: float = 0.6
     mqtt_server_host: str = "localhost"
     mqtt_server_port: int = 1883
     base_topic_overwrite: str | None = None

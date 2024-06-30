@@ -120,18 +120,14 @@ async def websocket_endpoint(websocket: WebSocket):
                 audio_data, input_samplerate=client_conf.samplerate
             )
             logger.debug("Speech prob: %s.", speech_prob)
-            speech_prob = 1
             if speech_prob >= sup_util.config_obj.vad_threshold:
                 prediction = sup_util.wakeword_model.predict(
                     audio_data.flatten(),
-                    debounce_time=1.0,
-                    threshold={
-                        "alexa": sup_util.config_obj.wakework_detection_threshold
-                    },
                 )
-                logger.debug("Wakeword prob: %s.", prediction["alexa"])
+                alexa_prediction_round = round(prediction["alexa"], 1)
+                logger.debug("Wakeword prob: %s.", alexa_prediction_round)
                 if (
-                    prediction["alexa"]
+                    alexa_prediction_round
                     >= sup_util.config_obj.wakework_detection_threshold
                 ):
                     logger.info("Wakeword detected.")

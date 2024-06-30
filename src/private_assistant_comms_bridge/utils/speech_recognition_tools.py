@@ -23,11 +23,11 @@ vad_model, utils = torch.hub.load(
 
 def int2float(sound: np_typing.NDArray[np.int16]) -> np_typing.NDArray[np.float32]:
     abs_max = np.abs(sound).max()
-    sound = sound.astype(np.float32)
+    sound_32: np_typing.NDArray[np.float32] = sound.astype(np.float32)
     if abs_max > 0:
-        sound *= 1 / 32768
-    sound = sound.squeeze()  # depends on the use case
-    return sound
+        sound_32 *= 1 / 32768
+    sound_32 = sound_32.squeeze()  # depends on the use case
+    return sound_32
 
 
 def format_audio_and_speech_prob(
@@ -35,7 +35,7 @@ def format_audio_and_speech_prob(
 ) -> tuple[int, np_typing.NDArray[np.float32]]:
     audio_float32 = int2float(audio_frames)
     speech_prob = vad_model(torch.from_numpy(audio_float32), input_samplerate).item()
-    return speech_prob, audio_float32
+    return round(speech_prob, 1), audio_float32
 
 
 async def send_audio_to_stt_api(
