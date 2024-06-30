@@ -34,8 +34,20 @@ def format_audio_and_speech_prob(
     audio_frames: np_typing.NDArray[np.int16], input_samplerate: int
 ) -> tuple[int, np_typing.NDArray[np.float32]]:
     audio_float32 = int2float(audio_frames)
-    speech_prob = vad_model(torch.from_numpy(audio_float32), input_samplerate).item()
-    return round(speech_prob, 1), audio_float32
+    # Split the audio frames into chunks of size 512
+    chunks = [
+        audio_float32[i : i + 512]
+        for i in range(0, len(audio_float32), 512)
+        if len(audio_float32[i : i + 512]) == 512
+    ]
+    # Calculate the speech probabilities for each chunk
+    speech_probs = [
+        vad_model(torch.from_numpy(chunk), input_samplerate).item() for chunk in chunks
+    ]
+
+    # Return the maximum probability and the processed audio
+    max_speech_prob = max(speech_probs) if speech_probs else 0.0
+    return round(max_speech_prob, 1), audio_float32
 
 
 async def send_audio_to_stt_api(
