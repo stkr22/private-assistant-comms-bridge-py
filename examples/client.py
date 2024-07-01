@@ -17,12 +17,12 @@ logging.basicConfig(
 logger = logging.getLogger()
 
 # Configuration for audio capture and playback
-# chunk size should be 1/10 of samplerate otherwise silero vad might not work properly
+# chunk size should be 80ms of samplerate otherwise oww might not work properly
 config = {
     "samplerate": 16000,
     "input_channels": 1,
     "output_channels": 1,
-    "chunk_size": 1600,
+    "chunk_size": 1280,
     "room": "livingroom",
 }
 OUTPUT_DEVICE_INDEX = 1
