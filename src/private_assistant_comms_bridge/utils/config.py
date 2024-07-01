@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Config(BaseModel):
-    wakework_detection_threshold: float = 0.8
+    wakework_detection_threshold: float = 0.7
     speech_transcription_api: str = "http://localhost:8000/transcribe"
     speech_transcription_api_token: str | None = None
     speech_synthesis_api: str = "http://localhost:8080/synthesizeSpeech"
