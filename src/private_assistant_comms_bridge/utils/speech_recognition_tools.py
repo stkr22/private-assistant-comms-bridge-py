@@ -34,13 +34,10 @@ def format_audio_and_speech_prob(
     audio_frames: np_typing.NDArray[np.int16], input_samplerate: int
 ) -> tuple[int, np_typing.NDArray[np.float32]]:
     audio_float32 = int2float(audio_frames)
+    # Calculate the number of full chunks of size 512
+    num_chunks = len(audio_float32) // 512
     # Split the audio frames into chunks of size 512
-    chunks = [
-        audio_float32[i : i + 512]
-        for i in range(0, len(audio_float32), 512)
-        if len(audio_float32[i : i + 512]) == 512
-    ]
-    # Calculate the speech probabilities for each chunk
+    chunks = np.array_split(audio_float32[: num_chunks * 512], num_chunks)
     speech_probs = [
         vad_model(torch.from_numpy(chunk), input_samplerate).item() for chunk in chunks
     ]
