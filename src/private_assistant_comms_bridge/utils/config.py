@@ -26,9 +26,7 @@ class Config(BaseModel):
 
     @property
     def base_topic(self) -> str:
-        return (
-            self.base_topic_overwrite or f"assistant/comms_bridge/all/{self.client_id}"
-        )
+        return self.base_topic_overwrite or f"assistant/comms_bridge/all/{self.client_id}"
 
     @property
     def input_topic(self) -> str:
