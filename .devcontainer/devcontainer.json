@@ -1,5 +1,5 @@
 {
-	"name": "private-assistant-comms-bridge-py-dev-environment",
+	"name": "private-assistant-comms-bridge-dev-environment",
 	"image": "mcr.microsoft.com/devcontainers/python:3.11",
 	"runArgs": [
 		"--userns=keep-id"
@@ -14,7 +14,9 @@
 				"charliermarsh.ruff",
 				"ms-python.mypy-type-checker",
 				"tamasfe.even-better-toml",
-				"oderwat.indent-rainbow"
+				"github.vscode-github-actions",
+				"oderwat.indent-rainbow",
+				"mhutchie.git-graph"
 			]
 		}
 	},
@@ -22,5 +24,6 @@
 		"HOME": "/home/vscode",
 		"POETRY_VIRTUALENVS_IN_PROJECT": "true"
 	},
-	"postCreateCommand": "pip install --user poetry pre-commit && sudo bash scripts/install_dependencies.sh && pre-commit install && poetry install"
+	"postCreateCommand": "pip install --user poetry pre-commit && sudo bash scripts/install_dependencies.sh && poetry install && pre-commit install"
+
 }
