@@ -17,10 +17,6 @@ RUN mkdir /app
 COPY assets/ /app/
 WORKDIR /app
 
-# Change ownership of the application directory
-RUN chown -R appuser:appuser /app
-
-
 EXPOSE 80
 
 HEALTHCHECK --interval=20s --timeout=20s --start-period=5s --retries=3 CMD ["curl", "--fail", "-so", "/dev/null", "http://127.0.0.1:80/health"]
