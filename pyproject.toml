@@ -35,6 +35,12 @@ mypy = "^1.10.0"
 pytest = "^8.2.2"
 types-pyyaml = "^6.0.12.20240311"
 
+[[tool.mypy.overrides]]
+module = [
+    "openwakeword.*"
+]
+ignore_missing_imports = true
+
 [tool.ruff]
 target-version = "py311"
 line-length = 120

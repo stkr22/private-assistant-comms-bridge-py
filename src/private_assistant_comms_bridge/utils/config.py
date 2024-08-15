@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 class Config(BaseModel):
     wakework_detection_threshold: float = 0.7
+    path_or_name_wakeword_model: str = "./hey_nohvah.tflite"
+    name_wakeword_model: str = "hey_nohvah"
     speech_transcription_api: str = "http://localhost:8000/transcribe"
     speech_transcription_api_token: str | None = None
     speech_synthesis_api: str = "http://localhost:8080/synthesizeSpeech"
