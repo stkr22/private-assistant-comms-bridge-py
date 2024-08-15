@@ -39,6 +39,7 @@ sup_util = support_utils.SupportUtils()
 async def lifespan(app: FastAPI):
     # Load the ML model
     sup_util.config_obj = config.load_config(pathlib.Path(os.getenv("ASSISTANT_API_CONFIG_PATH", "local_config.yaml")))
+    openwakeword.utils.download_models()
     sup_util.wakeword_model = openwakeword.Model(
         wakeword_models=[sup_util.config_obj.path_or_name_wakeword_model],
         enable_speex_noise_suppression=True,
