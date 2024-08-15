@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "private-assistant-comms-bridge"
-version = "1.0.15"
+version = "1.0.16"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = ["stkr22 <stkr22@github.com>"]
 readme = "README.md"
@@ -34,6 +34,12 @@ ruff = "^0.4.8"
 mypy = "^1.10.0"
 pytest = "^8.2.2"
 types-pyyaml = "^6.0.12.20240311"
+
+[[tool.mypy.overrides]]
+module = [
+    "openwakeword.*"
+]
+ignore_missing_imports = true
 
 [tool.ruff]
 target-version = "py311"
