@@ -22,6 +22,7 @@ class Config(BaseModel):
     vad_threshold: float = 0.6
     mqtt_server_host: str = "localhost"
     mqtt_server_port: int = 1883
+    broadcast_topic: str = "assistant/comms_bridge/broadcast"
     base_topic_overwrite: str | None = None
     input_topic_overwrite: str | None = None
     output_topic_overwrite: str | None = None

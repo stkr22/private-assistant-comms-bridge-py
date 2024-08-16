@@ -39,7 +39,7 @@ sup_util = support_utils.SupportUtils()
 async def lifespan(app: FastAPI):
     # Load the ML model
     sup_util.config_obj = config.load_config(pathlib.Path(os.getenv("ASSISTANT_API_CONFIG_PATH", "local_config.yaml")))
-    openwakeword.utils.download_models()
+    openwakeword.utils.download_models(model_names=["alexa"])
     sup_util.wakeword_model = openwakeword.Model(
         wakeword_models=[sup_util.config_obj.path_or_name_wakeword_model],
         enable_speex_noise_suppression=True,
@@ -91,6 +91,8 @@ async def websocket_endpoint(websocket: WebSocket):
         client_conf.output_topic = output_topic
         sup_util.mqtt_subscription_to_queue[output_topic] = output_queue
         sup_util.mqtt_client.subscribe(output_topic, options=mqtt.SubscribeOptions(qos=1))
+        sup_util.mqtt_subscription_to_queue[sup_util.config_obj.broadcast_topic] = output_queue
+        sup_util.mqtt_client.subscribe(sup_util.config_obj.broadcast_topic, options=mqtt.SubscribeOptions(qos=1))
 
         while True:
             await process_output_queue(websocket, output_queue, sup_util.config_obj)
