@@ -21,4 +21,4 @@ EXPOSE 80
 
 HEALTHCHECK --interval=20s --timeout=20s --start-period=5s --retries=3 CMD ["curl", "--fail", "-so", "/dev/null", "http://127.0.0.1:80/health"]
 
-ENTRYPOINT ["uvicorn", "private_assistant_comms_bridge.main:app", "--host", "0.0.0.0", "--port", "80"]
+ENTRYPOINT ["uvicorn", "private_assistant_comms_bridge.main:app", "--host", "0.0.0.0", "--port", "8080"]

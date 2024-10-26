@@ -32,24 +32,20 @@ def int2float(sound: np_typing.NDArray[np.int16]) -> np_typing.NDArray[np.float3
 
 def format_audio_and_speech_prob(
     audio_frames: np_typing.NDArray[np.int16], input_samplerate: int
-) -> tuple[int, np_typing.NDArray[np.float32]]:
+) -> tuple[float, np_typing.NDArray[np.float32]]:
     audio_float32 = int2float(audio_frames)
     # Calculate the number of full chunks of size 512
     num_chunks = len(audio_float32) // 512
     # Split the audio frames into chunks of size 512
     chunks = np.array_split(audio_float32[: num_chunks * 512], num_chunks)
-    speech_probs = [
-        vad_model(torch.from_numpy(chunk), input_samplerate).item() for chunk in chunks
-    ]
+    speech_probs = [vad_model(torch.from_numpy(chunk), input_samplerate).item() for chunk in chunks]
 
     # Return the maximum probability and the processed audio
     max_speech_prob = max(speech_probs) if speech_probs else 0.0
     return round(max_speech_prob, 1), audio_float32
 
 
-async def send_audio_to_stt_api(
-    audio_data: np_typing.NDArray[np.float32], config_obj: config.Config
-) -> dict | None:
+async def send_audio_to_stt_api(audio_data: np_typing.NDArray[np.float32], config_obj: config.Config) -> dict | None:
     """Send the recorded audio to the stt batch api server."""
     files = {"file": ("audio.raw", audio_data.tobytes())}
     try:
@@ -67,9 +63,7 @@ async def send_audio_to_stt_api(
     return None
 
 
-async def send_text_to_tts_api(
-    text: str, config_obj: config.Config
-) -> np_typing.NDArray[np.int16] | None:
+async def send_text_to_tts_api(text: str, config_obj: config.Config) -> np_typing.NDArray[np.int16] | None:
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
