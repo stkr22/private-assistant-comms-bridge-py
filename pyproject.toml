@@ -4,7 +4,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "private-assistant-comms-bridge"
-version = "1.1.2"
+version = "1.2.0"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = ["stkr22 <stkr22@github.com>"]
 readme = "README.md"
@@ -23,8 +23,6 @@ typer = {extras = ["all"], version = "^0.12.3"}
 torchaudio = "^2.3.1"
 private-assistant-commons = "^0.1.0"
 websockets = "^12.0"
-aiortc = "^1.9.0"
-aiohttp = "^3.9.5"
 fastapi = "^0.111.0"
 speexdsp-ns = "^0.1.2"
 numpy = "1.26.4"

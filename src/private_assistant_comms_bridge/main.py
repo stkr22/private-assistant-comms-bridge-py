@@ -31,13 +31,11 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-
 sup_util = support_utils.SupportUtils()
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load the ML model
     sup_util.config_obj = config.load_config(
         pathlib.Path(os.getenv("PRIVATE_ASSISTANT_API_CONFIG_PATH", "local_config.yaml"))
     )
@@ -61,7 +59,6 @@ async def lifespan(app: FastAPI):
     mqtt_client.loop_start()
     sup_util.mqtt_client = mqtt_client
     yield
-    # Clean up the ML models and release the resources
     print(1)
 
 
@@ -73,18 +70,22 @@ async def health() -> dict:
     return {"status": "healthy"}
 
 
+@app.get("/acceptsConnections")
+async def accepts_connection():
+    """Endpoint to check if the app can accept a new WebSocket connection."""
+    if sup_util.websocket_connected:
+        return {"status": "busy"}, 503
+    return {"status": "ready"}
+
+
 @app.websocket("/client_control")
 async def websocket_endpoint(websocket: WebSocket):
-    """Handle WebSocket connections."""
-    await websocket.accept()
-    try:
-        sup_util.config_obj
-        sup_util.mqtt_client
-        sup_util.wakeword_model
-    except ValueError as e:
-        logger.error(str(e))
-        await websocket.close(code=1002)
+    if sup_util.websocket_connected:
+        await websocket.close(code=1001, reason="Server busy")
         return
+
+    sup_util.websocket_connected = True  # Mark WebSocket as connected
+    await websocket.accept()
     try:
         client_config_raw = await websocket.receive_json()
         client_conf = client_config.ClientConfig.model_validate(client_config_raw)
@@ -106,11 +107,13 @@ async def websocket_endpoint(websocket: WebSocket):
     except WebSocketDisconnect:
         logger.info("Client disconnected")
     except ValueError as e:
-        logger.error(f"Configuration error: {e}")
+        logger.error("Configuration error: %s", e)
         await websocket.close(code=1002)
     except Exception as e:
-        logger.exception(f"Unexpected error: {e}")
+        logger.exception("Unexpected error occurred: %s", e)
         await websocket.close(code=1011)
+    finally:
+        sup_util.websocket_connected = False  # Reset connection status on disconnect or error
 
 
 async def process_output_queue(websocket: WebSocket, output_queue: queue.Queue[str], config_obj: config.Config):
@@ -120,7 +123,7 @@ async def process_output_queue(websocket: WebSocket, output_queue: queue.Queue[s
         if audio_np is not None:
             await websocket.send_bytes(audio_np.tobytes())
     except queue.Empty:
-        logger.debug("Nothing in queue, continue.")
+        logger.debug("Queue is empty, no message to process.")
 
 
 async def handle_audio_message(
@@ -137,13 +140,13 @@ async def handle_audio_message(
     )
     wakeword_prediction = prediction[sup_util.config_obj.name_wakeword_model]
     logger.debug(
-        "Wakeword prob: %s. Above threshold %s",
+        "Wakeword probability: %s, Threshold check: %s",
         wakeword_prediction,
         wakeword_prediction >= sup_util.config_obj.wakework_detection_threshold,
     )
 
     if wakeword_prediction >= sup_util.config_obj.wakework_detection_threshold:
-        logger.info("Wakeword detected.")
+        logger.info("Wakeword detected, sending start listening signal.")
         await websocket.send_text("start_listening")
         await processing_sound.processing_spoken_commands(
             websocket=websocket,

@@ -1,6 +1,6 @@
 import queue
 
-import openwakeword  # type: ignore
+import openwakeword
 import paho.mqtt.client as mqtt
 
 from private_assistant_comms_bridge.utils import (
@@ -14,6 +14,7 @@ class SupportUtils:
         self._wakeword_model: openwakeword.Model | None = None
         self._mqtt_client: mqtt.Client | None = None
         self.mqtt_subscription_to_queue: dict[str, queue.Queue[str]] = {}
+        self.websocket_connected: bool = False
 
     @property
     def config_obj(self) -> config.Config:
