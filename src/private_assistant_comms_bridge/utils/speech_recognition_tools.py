@@ -3,22 +3,12 @@ import logging
 import httpx
 import numpy as np
 import numpy.typing as np_typing
-import torch
 
 from private_assistant_comms_bridge.utils import (
     config,
 )
 
 logger = logging.getLogger(__name__)
-
-
-torch.set_num_threads(1)
-vad_model, utils = torch.hub.load(
-    repo_or_dir="snakers4/silero-vad",
-    model="silero_vad",
-    force_reload=False,
-    onnx=True,
-)
 
 
 def int2float(sound: np_typing.NDArray[np.int16]) -> np_typing.NDArray[np.float32]:
@@ -28,21 +18,6 @@ def int2float(sound: np_typing.NDArray[np.int16]) -> np_typing.NDArray[np.float3
         sound_32 *= 1 / 32768
     sound_32 = sound_32.squeeze()  # depends on the use case
     return sound_32
-
-
-def format_audio_and_speech_prob(
-    audio_frames: np_typing.NDArray[np.int16], input_samplerate: int
-) -> tuple[float, np_typing.NDArray[np.float32]]:
-    audio_float32 = int2float(audio_frames)
-    # Calculate the number of full chunks of size 512
-    num_chunks = len(audio_float32) // 512
-    # Split the audio frames into chunks of size 512
-    chunks = np.array_split(audio_float32[: num_chunks * 512], num_chunks)
-    speech_probs = [vad_model(torch.from_numpy(chunk), input_samplerate).item() for chunk in chunks]
-
-    # Return the maximum probability and the processed audio
-    max_speech_prob = max(speech_probs) if speech_probs else 0.0
-    return round(max_speech_prob, 1), audio_float32
 
 
 async def send_audio_to_stt_api(audio_data: np_typing.NDArray[np.float32], config_obj: config.Config) -> dict | None:
