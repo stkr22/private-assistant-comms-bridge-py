@@ -1,8 +1,8 @@
 exclude: "docs|node_modules|migrations|.git|.tox|styles.css"
-default_stages: [commit]
+default_stages: [pre-commit]
 fail_fast: false
 default_language_version:
-  python: "python3.11"
+  python: "python3.12"
 
 repos:
 
