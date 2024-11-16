@@ -1,10 +1,11 @@
-import queue
+import asyncio
 
+import aiomqtt as mqtt
 import openwakeword
-import paho.mqtt.client as mqtt
 
 from private_assistant_comms_bridge.utils import (
     config,
+    silero_vad,
 )
 
 
@@ -13,8 +14,9 @@ class SupportUtils:
         self._config_obj: config.Config | None = None
         self._wakeword_model: openwakeword.Model | None = None
         self._mqtt_client: mqtt.Client | None = None
-        self.mqtt_subscription_to_queue: dict[str, queue.Queue[str]] = {}
+        self.mqtt_subscription_to_queue: dict[str, asyncio.Queue[str]] = {}
         self.websocket_connected: bool = False
+        self.vad_model: silero_vad.SileroVad = silero_vad.SileroVad(0.6, 1)
 
     @property
     def config_obj(self) -> config.Config:
