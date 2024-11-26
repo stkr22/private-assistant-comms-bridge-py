@@ -31,7 +31,7 @@ class Config(BaseModel):
     output_channels: int = Field(1, description="Number of output channels")
     chunk_size: int = Field(1280, description="Audio chunk size in bytes")
     room: str = Field("livingroom", description="Room identifier")
-    url: str = Field("ws://192.168.178.20:8000/client_control", description="WebSocket URL")
+    url: str = Field("ws://192.168.8.20:8000/client_control", description="WebSocket URL")
     output_device_index: int = Field(1, description="Output device index")
     input_device_index: int = Field(1, description="Input device index")
     start_listening_path: Path = Field(
@@ -52,7 +52,7 @@ class Config(BaseModel):
                 sys.exit(1)
         else:
             logger.warning("YAML configuration file not found: %s. Using defaults.", yaml_path)
-            return cls()
+            return cls()  # type: ignore
 
 
 # Function to load WAV file into memory
@@ -105,7 +105,7 @@ async def send_receive_audio(
                 await websocket.send(
                     json.dumps(
                         config.model_dump(
-                            include=["samplerate", "input_channels", "output_channels", "chunk_size", "room"]
+                            include=["samplerate", "input_channels", "output_channels", "chunk_size", "room"]  # type: ignore
                         )
                     )
                 )
