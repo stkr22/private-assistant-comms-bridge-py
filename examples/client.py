@@ -38,6 +38,7 @@ class Config(BaseModel):
         Path("sounds/start_listening.wav"), description="Path to start listening WAV file"
     )
     stop_listening_path: Path = Field(Path("sounds/stop_listening.wav"), description="Path to stop listening WAV file")
+    alert_default_path: Path = Field(Path("sounds/alert_default.wav"), description="Path to alert default WAV file")
 
     @classmethod
     def from_yaml(cls, yaml_path: Path):
@@ -77,6 +78,7 @@ async def receive_commands(
     stream_output,
     start_listening_sound: bytes,
     stop_listening_sound: bytes,
+    alert_default_sound: bytes,
 ):
     """Async function to receive commands from the server."""
     while True:
@@ -88,6 +90,8 @@ async def receive_commands(
             stream_output.write(start_listening_sound)
         elif message == "stop_listening":
             stream_output.write(stop_listening_sound)
+        elif message == "alert_default":
+            stream_output.write(alert_default_sound)
         await asyncio.sleep(0.01)
 
 
@@ -97,6 +101,7 @@ async def send_receive_audio(
     stream_output,
     start_listening_sound: bytes,
     stop_listening_sound: bytes,
+    alert_default_sound: bytes,
 ):
     """Async function to handle audio sending and receiving."""
     while True:
@@ -111,7 +116,9 @@ async def send_receive_audio(
                 )
                 await asyncio.gather(
                     send_audio(websocket, stream_input, config),
-                    receive_commands(websocket, stream_output, start_listening_sound, stop_listening_sound),
+                    receive_commands(
+                        websocket, stream_output, start_listening_sound, stop_listening_sound, alert_default_sound
+                    ),
                 )
         except websockets.ConnectionClosed:
             logger.warning("Connection closed, retrying...")
@@ -126,6 +133,7 @@ def main(config_path="config.yaml"):
     config = Config.from_yaml(config_path)
     start_listening_sound = load_wav_file(config.start_listening_path)
     stop_listening_sound = load_wav_file(config.stop_listening_path)
+    alert_default_sound = load_wav_file(config.alert_default_path)
 
     p = pyaudio.PyAudio()
 
@@ -149,7 +157,9 @@ def main(config_path="config.yaml"):
 
     try:
         asyncio.run(
-            send_receive_audio(config, stream_input, stream_output, start_listening_sound, stop_listening_sound)
+            send_receive_audio(
+                config, stream_input, stream_output, start_listening_sound, stop_listening_sound, alert_default_sound
+            )
         )
     finally:
         stream_input.stop_stream()

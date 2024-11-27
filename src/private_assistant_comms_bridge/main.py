@@ -10,7 +10,9 @@ from contextlib import asynccontextmanager
 import aiomqtt
 import numpy as np
 import openwakeword
+import pydantic
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from private_assistant_commons import messages
 
 from private_assistant_comms_bridge.utils import (
     client_config,
@@ -54,7 +56,10 @@ async def listen(client: aiomqtt.Client, sup_util: support_utils.SupportUtils):
         else:
             payload_str = decode_message_payload(message.payload)
             if payload_str is not None:
-                await topic_queue.put(payload_str)
+                try:
+                    await topic_queue.put(messages.Response.model_validate_json(payload_str))
+                except pydantic.ValidationError:
+                    logger.error("Message failed validation. %s", payload_str)
 
 
 @asynccontextmanager
@@ -117,7 +122,7 @@ async def websocket_endpoint(websocket: WebSocket):
     try:
         client_config_raw = await websocket.receive_json()
         client_conf = client_config.ClientConfig.model_validate(client_config_raw)
-        output_queue: asyncio.Queue[str] = asyncio.Queue()
+        output_queue: asyncio.Queue[messages.Response] = asyncio.Queue()
         output_topic = f"assistant/{client_conf.room}/output"
         client_conf.output_topic = output_topic
         sup_util.mqtt_subscription_to_queue[output_topic] = output_queue
@@ -143,10 +148,14 @@ async def websocket_endpoint(websocket: WebSocket):
         sup_util.websocket_connected = False  # Reset connection status on disconnect or error
 
 
-async def process_output_queue(websocket: WebSocket, output_queue: asyncio.Queue[str], config_obj: config.Config):
+async def process_output_queue(
+    websocket: WebSocket, output_queue: asyncio.Queue[messages.Response], config_obj: config.Config
+):
     try:
-        output_text = output_queue.get_nowait()
-        audio_np = await speech_recognition_tools.send_text_to_tts_api(output_text, config_obj)
+        response = output_queue.get_nowait()
+        audio_np = await speech_recognition_tools.send_text_to_tts_api(response.text, config_obj)
+        if response.alert is not None and response.alert.play_before:
+            await websocket.send_text("alert_default")
         if audio_np is not None:
             await websocket.send_bytes(audio_np.tobytes())
     except asyncio.QueueEmpty:
