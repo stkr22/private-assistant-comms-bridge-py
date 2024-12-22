@@ -18,6 +18,6 @@
     "python.testing.pytestEnabled": true,
     "remote.localPortHost": "allInterfaces",
     "cSpell.files": [
-        "src"
+        "app"
     ]
 }

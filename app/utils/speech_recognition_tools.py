@@ -5,7 +5,7 @@ import numpy as np
 import numpy.typing as np_typing
 from pydantic import BaseModel, ValidationError
 
-from private_assistant_comms_bridge.utils import config
+from app.utils import config
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from private_assistant_comms_bridge.main import app, sup_util
+from app.main import app, sup_util
 
 client = TestClient(app)
 

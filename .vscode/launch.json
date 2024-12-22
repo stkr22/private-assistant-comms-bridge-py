@@ -10,7 +10,7 @@
             "request": "launch",
             "module": "uvicorn",
             "args": [
-                "private_assistant_comms_bridge.main:app",
+                "app.main:app",
                 "--reload"
             ],
             "jinja": true,

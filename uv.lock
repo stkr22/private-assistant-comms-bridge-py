@@ -37,6 +37,59 @@ wheels = [
 ]
 
 [[package]]
+name = "app"
+version = "1.5.2"
+source = { editable = "." }
+dependencies = [
+    { name = "aiomqtt" },
+    { name = "fastapi", extra = ["standard"] },
+    { name = "httpx" },
+    { name = "numpy" },
+    { name = "onnxruntime" },
+    { name = "openwakeword" },
+    { name = "private-assistant-commons" },
+    { name = "pydantic" },
+    { name = "pysilero-vad" },
+    { name = "pyyaml" },
+    { name = "speexdsp-ns" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+    { name = "types-pyyaml" },
+    { name = "websockets" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "aiomqtt", specifier = ">=2.3.0,<3.0.0" },
+    { name = "fastapi", extras = ["standard"], specifier = ">=0.113.0,<0.114.0" },
+    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "numpy", specifier = "==1.26.4" },
+    { name = "onnxruntime", specifier = ">=1.20.0,<2.0.0" },
+    { name = "openwakeword", git = "https://github.com/stkr22/openWakeWord.git?rev=af84a81" },
+    { name = "private-assistant-commons", specifier = ">=2.0.0,<3.0.0" },
+    { name = "pydantic", specifier = ">=2.7.3,<3.0.0" },
+    { name = "pysilero-vad", specifier = ">=2.0.0,<3.0.0" },
+    { name = "pyyaml", specifier = ">=6.0.1,<7.0.0" },
+    { name = "speexdsp-ns", specifier = ">=0.1.2,<1.0.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "mypy", specifier = ">=1.11.0" },
+    { name = "pytest", specifier = ">=8.3.3" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "ruff", specifier = ">=0.8.0" },
+    { name = "types-pyyaml", specifier = ">=6.0.12.20240311,<7.0.0" },
+    { name = "websockets", specifier = ">=14.1" },
+]
+
+[[package]]
 name = "certifi"
 version = "2024.12.14"
 source = { registry = "https://pypi.org/simple" }
@@ -524,59 +577,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/61/cb/f938ab156950a0a8526292eed647af0f67f3980b26f492f5665202469ed5/private_assistant_commons-2.1.0.tar.gz", hash = "sha256:7b3e0bf80112964af00dd748158ce6512620c523faf8b1d5b33660b7ec5e18c6", size = 19570 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9a/d5/41db129a0227f2a88065b4e438522df120c342c9d3a3f690ddb6d5ced6ad/private_assistant_commons-2.1.0-py3-none-any.whl", hash = "sha256:200f8cb0f186cfa887743f6fc02a5896ede2f31990ff6f9b40a3d5eeb53c8630", size = 21427 },
-]
-
-[[package]]
-name = "private-assistant-comms-bridge"
-version = "1.5.1"
-source = { editable = "." }
-dependencies = [
-    { name = "aiomqtt" },
-    { name = "fastapi", extra = ["standard"] },
-    { name = "httpx" },
-    { name = "numpy" },
-    { name = "onnxruntime" },
-    { name = "openwakeword" },
-    { name = "private-assistant-commons" },
-    { name = "pydantic" },
-    { name = "pysilero-vad" },
-    { name = "pyyaml" },
-    { name = "speexdsp-ns" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "mypy" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-    { name = "types-pyyaml" },
-    { name = "websockets" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "aiomqtt", specifier = ">=2.3.0,<3.0.0" },
-    { name = "fastapi", extras = ["standard"], specifier = ">=0.113.0,<0.114.0" },
-    { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
-    { name = "numpy", specifier = "==1.26.4" },
-    { name = "onnxruntime", specifier = ">=1.20.0,<2.0.0" },
-    { name = "openwakeword", git = "https://github.com/stkr22/openWakeWord.git?rev=af84a81" },
-    { name = "private-assistant-commons", specifier = ">=2.0.0,<3.0.0" },
-    { name = "pydantic", specifier = ">=2.7.3,<3.0.0" },
-    { name = "pysilero-vad", specifier = ">=2.0.0,<3.0.0" },
-    { name = "pyyaml", specifier = ">=6.0.1,<7.0.0" },
-    { name = "speexdsp-ns", specifier = ">=0.1.2,<1.0.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "mypy", specifier = ">=1.11.0" },
-    { name = "pytest", specifier = ">=8.3.3" },
-    { name = "pytest-cov", specifier = ">=6.0.0" },
-    { name = "ruff", specifier = ">=0.8.0" },
-    { name = "types-pyyaml", specifier = ">=6.0.12.20240311,<7.0.0" },
-    { name = "websockets", specifier = ">=14.1" },
 ]
 
 [[package]]

@@ -6,12 +6,12 @@ import numpy as np
 from fastapi import WebSocket, WebSocketDisconnect
 from private_assistant_commons import messages
 
-from private_assistant_comms_bridge.utils import (
+from app.utils import (
     client_config,
     config,
     support_utils,
 )
-from private_assistant_comms_bridge.utils import (
+from app.utils import (
     speech_recognition_tools as srt,
 )
 

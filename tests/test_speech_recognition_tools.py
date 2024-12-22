@@ -1,6 +1,6 @@
 import numpy as np
 
-from private_assistant_comms_bridge.utils.speech_recognition_tools import int2float
+from app.utils.speech_recognition_tools import int2float
 
 
 def test_int2float():

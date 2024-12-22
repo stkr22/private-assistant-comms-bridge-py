@@ -9,5 +9,5 @@ project_description: Comms Bridge is an open-source endpoint designed to facilit
     edge devices.
 project_name: Private Assistant Comms Bridge
 python_package_distribution_name: private-assistant-comms-bridge
-python_package_import_name: private_assistant_comms_bridge
+python_package_import_name: app
 version: 0.1.0

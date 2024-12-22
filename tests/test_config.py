@@ -4,7 +4,7 @@ import pytest
 import yaml
 from pydantic import ValidationError
 
-from private_assistant_comms_bridge.utils.config import Config
+from app.utils.config import Config
 
 # Sample invalid YAML configuration (missing required fields)
 invalid_yaml = """

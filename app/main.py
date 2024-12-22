@@ -14,7 +14,7 @@ import pydantic
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from private_assistant_commons import messages
 
-from private_assistant_comms_bridge.utils import (
+from app.utils import (
     client_config,
     config,
     processing_sound,

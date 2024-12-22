@@ -3,8 +3,8 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "private-assistant-comms-bridge"
-version = "1.5.2"
+name = "app"
+version = "2.0.0"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = [
     { name = "stkr22", email = "stkr22@github.com" }
@@ -88,7 +88,7 @@ python_files = ["test_*.py"]
 addopts = "-ra -q"
 
 [tool.coverage.run]
-source = ["private_assistant_comms_bridge"]
+source = ["app"]
 branch = true
 
 [tool.coverage.report]

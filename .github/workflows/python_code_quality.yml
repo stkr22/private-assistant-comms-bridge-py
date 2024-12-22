@@ -3,12 +3,12 @@ name: Python Code Quality
 on:
   push:
     paths:
-      - 'src/**'
+      - 'app/**'
       - 'tests/**'
       - 'pyproject.toml'
   pull_request:
     paths:
-      - 'src/**'
+      - 'app/**'
       - 'tests/**'
       - 'pyproject.toml'
 

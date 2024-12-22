@@ -4,7 +4,7 @@ import aiomqtt as mqtt
 import openwakeword
 from private_assistant_commons import messages
 
-from private_assistant_comms_bridge.utils import (
+from app.utils import (
     config,
     silero_vad,
 )
