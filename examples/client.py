@@ -4,7 +4,9 @@ import logging
 import os
 import sys
 import wave
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Final, Self
 
 import pyaudio
 import websockets
@@ -19,30 +21,41 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     stream=sys.stdout,
 )
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 
-# Configuration for audio capture and playback
-# chunk size should be 1/10 of samplerate otherwise silero vad might not work properly
+
+@dataclass
+class AudioStreams:
+    input: pyaudio.Stream
+    output: pyaudio.Stream
+
+    def cleanup(self) -> None:
+        for stream in (self.input, self.output):
+            stream.stop_stream()
+            stream.close()
 
 
 class Config(BaseModel):
-    samplerate: int = Field(16000, description="Sample rate for audio")
-    input_channels: int = Field(1, description="Number of input channels")
-    output_channels: int = Field(1, description="Number of output channels")
-    chunk_size: int = Field(1280, description="Audio chunk size in bytes")
-    room: str = Field("livingroom", description="Room identifier")
-    url: str = Field("ws://192.168.8.20:8000/client_control", description="WebSocket URL")
-    output_device_index: int = Field(1, description="Output device index")
-    input_device_index: int = Field(1, description="Input device index")
+    samplerate: int = Field(default=16000, description="Sample rate for audio")
+    input_channels: int = Field(default=1, description="Number of input channels")
+    output_channels: int = Field(default=1, description="Number of output channels")
+    chunk_size: int = Field(default=1280, description="Audio chunk size in bytes")
+    room: str = Field(default="livingroom", description="Room identifier")
+    url: str = Field(default="ws://192.168.8.20:8000/client_control", description="WebSocket URL")
+    output_device_index: int = Field(default=1, description="Output device index")
+    input_device_index: int = Field(default=1, description="Input device index")
     start_listening_path: Path = Field(
-        Path("sounds/start_listening.wav"), description="Path to start listening WAV file"
+        default=Path("sounds/start_listening.wav"), description="Path to start listening WAV file"
     )
-    stop_listening_path: Path = Field(Path("sounds/stop_listening.wav"), description="Path to stop listening WAV file")
-    alert_default_path: Path = Field(Path("sounds/alert_default.wav"), description="Path to alert default WAV file")
+    stop_listening_path: Path = Field(
+        default=Path("sounds/stop_listening.wav"), description="Path to stop listening WAV file"
+    )
+    alert_default_path: Path = Field(
+        default=Path("sounds/alert_default.wav"), description="Path to alert default WAV file"
+    )
 
     @classmethod
-    def from_yaml(cls, yaml_path: Path):
-        """Load configuration from a YAML file and validate using Pydantic."""
+    def from_yaml(cls, yaml_path: Path) -> Self:
         if yaml_path.exists():
             try:
                 with yaml_path.open("r") as yaml_file:
@@ -51,90 +64,65 @@ class Config(BaseModel):
             except Exception as e:
                 logger.error("Error loading YAML configuration: %s", e)
                 sys.exit(1)
-        else:
-            logger.warning("YAML configuration file not found: %s. Using defaults.", yaml_path)
-            return cls()  # type: ignore
+        logger.warning("YAML configuration file not found: %s. Using defaults.", yaml_path)
+        return cls()
 
 
-# Function to load WAV file into memory
-def load_wav_file(file_path: Path):
-    with file_path.open("rb") as f:
-        wf = wave.open(f)
-        audio_data = wf.readframes(wf.getnframes())
-        wf.close()
-    return audio_data
+def load_wav_file(file_path: Path) -> bytes:
+    with file_path.open("rb") as f, wave.open(f) as wf:
+        return wf.readframes(wf.getnframes())  # type: ignore
 
 
-async def send_audio(websocket: websockets.asyncio.client.ClientConnection, stream_input, config: Config):
-    """Async function to send audio data to the server."""
-    while True:
-        audio_data = stream_input.read(config.chunk_size, exception_on_overflow=False)
-        await websocket.send(audio_data)
-        await asyncio.sleep(0.01)
+class WebSocketManager:
+    RECONNECT_DELAY: Final[float] = 1.0
+
+    def __init__(self, config: Config, streams: AudioStreams, sounds: dict[str, bytes]) -> None:
+        self.config = config
+        self.streams = streams
+        self.sounds = sounds
+        self._running = True
+
+    async def start(self) -> None:
+        while self._running:
+            try:
+                async with websockets.connect(self.config.url) as ws:
+                    await ws.send(self._get_config_json())
+                    await self._handle_connection(ws)
+            except websockets.ConnectionClosed:
+                logger.warning("Connection closed, retrying...")
+            except Exception as e:
+                logger.error("Error: %s", e, exc_info=True)
+            await asyncio.sleep(self.RECONNECT_DELAY)
+
+    def stop(self) -> None:
+        self._running = False
+        self.streams.cleanup()
+
+    async def _handle_connection(self, ws: websockets.asyncio.client.ClientConnection) -> None:
+        await asyncio.gather(self._send_audio(ws), self._receive_commands(ws))
+
+    async def _send_audio(self, ws: websockets.asyncio.client.ClientConnection) -> None:
+        while self._running:
+            audio_data = self.streams.input.read(self.config.chunk_size, exception_on_overflow=False)
+            await ws.send(audio_data)
+            await asyncio.sleep(0.01)
+
+    async def _receive_commands(self, ws: websockets.asyncio.client.ClientConnection) -> None:
+        while self._running:
+            message = await ws.recv()
+            if isinstance(message, bytes):
+                self.streams.output.write(message)
+            elif sound := self.sounds.get(message):
+                self.streams.output.write(sound)
+            await asyncio.sleep(0.01)
+
+    def _get_config_json(self) -> str:
+        return json.dumps(
+            self.config.model_dump(include={"samplerate", "input_channels", "output_channels", "chunk_size", "room"})
+        )
 
 
-async def receive_commands(
-    websocket: websockets.asyncio.client.ClientConnection,
-    stream_output,
-    start_listening_sound: bytes,
-    stop_listening_sound: bytes,
-    alert_default_sound: bytes,
-):
-    """Async function to receive commands from the server."""
-    while True:
-        message = await websocket.recv()
-
-        if isinstance(message, bytes):
-            stream_output.write(message)
-        elif message == "start_listening":
-            stream_output.write(start_listening_sound)
-        elif message == "stop_listening":
-            stream_output.write(stop_listening_sound)
-        elif message == "alert_default":
-            stream_output.write(alert_default_sound)
-        await asyncio.sleep(0.01)
-
-
-async def send_receive_audio(
-    config: Config,
-    stream_input,
-    stream_output,
-    start_listening_sound: bytes,
-    stop_listening_sound: bytes,
-    alert_default_sound: bytes,
-):
-    """Async function to handle audio sending and receiving."""
-    while True:
-        try:
-            async with websockets.connect(config.url) as websocket:
-                await websocket.send(
-                    json.dumps(
-                        config.model_dump(
-                            include=["samplerate", "input_channels", "output_channels", "chunk_size", "room"]  # type: ignore
-                        )
-                    )
-                )
-                await asyncio.gather(
-                    send_audio(websocket, stream_input, config),
-                    receive_commands(
-                        websocket, stream_output, start_listening_sound, stop_listening_sound, alert_default_sound
-                    ),
-                )
-        except websockets.ConnectionClosed:
-            logger.warning("Connection closed, retrying...")
-        except Exception as e:
-            logger.error("Unexpected error: %s", e, exc_info=True)
-        await asyncio.sleep(1)  # Avoid tight reconnection loops
-
-
-def main(config_path="config.yaml"):
-    """Function to handle audio input and output streams."""
-    config_path = Path(config_path)
-    config = Config.from_yaml(config_path)
-    start_listening_sound = load_wav_file(config.start_listening_path)
-    stop_listening_sound = load_wav_file(config.stop_listening_path)
-    alert_default_sound = load_wav_file(config.alert_default_path)
-
+def setup_audio_streams(config: Config) -> AudioStreams:
     p = pyaudio.PyAudio()
 
     stream_input = p.open(
@@ -155,19 +143,27 @@ def main(config_path="config.yaml"):
         output_device_index=config.output_device_index,
     )
 
+    return AudioStreams(input=stream_input, output=stream_output)
+
+
+def load_sound_effects(config: Config) -> dict[str, bytes]:
+    return {
+        "start_listening": load_wav_file(config.start_listening_path),
+        "stop_listening": load_wav_file(config.stop_listening_path),
+        "alert_default": load_wav_file(config.alert_default_path),
+    }
+
+
+def main(config_path: str = "config.yaml") -> None:
+    config = Config.from_yaml(Path(config_path))
+    streams = setup_audio_streams(config)
+    sounds = load_sound_effects(config)
+
+    ws_manager = WebSocketManager(config, streams, sounds)
+
     try:
-        asyncio.run(
-            send_receive_audio(
-                config, stream_input, stream_output, start_listening_sound, stop_listening_sound, alert_default_sound
-            )
-        )
+        asyncio.run(ws_manager.start())
+    except KeyboardInterrupt:
+        pass
     finally:
-        stream_input.stop_stream()
-        stream_output.stop_stream()
-        stream_input.close()
-        stream_output.close()
-        p.terminate()
-
-
-if __name__ == "__main__":
-    main()
+        ws_manager.stop()

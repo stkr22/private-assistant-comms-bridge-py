@@ -5,7 +5,7 @@ import logging
 import os
 import pathlib
 import sys
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 
 import aiomqtt
 import numpy as np
@@ -38,13 +38,12 @@ sup_util = support_utils.SupportUtils()
 
 def decode_message_payload(payload) -> str | None:
     """Decode the message payload if it is a suitable type."""
-    if isinstance(payload, bytes) or isinstance(payload, bytearray):
+    if isinstance(payload, bytes | bytearray):
         return payload.decode("utf-8")
-    elif isinstance(payload, str):
+    if isinstance(payload, str):
         return payload
-    else:
-        logger.warning("Unexpected payload type: %s", type(payload))
-        return None
+    logger.warning("Unexpected payload type: %s", type(payload))
+    return None
 
 
 async def listen(client: aiomqtt.Client, sup_util: support_utils.SupportUtils):
@@ -63,7 +62,7 @@ async def listen(client: aiomqtt.Client, sup_util: support_utils.SupportUtils):
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI):  # noqa: ARG001
     sup_util.config_obj = config.load_config(
         pathlib.Path(os.getenv("PRIVATE_ASSISTANT_API_CONFIG_PATH", "local_config.yaml"))
     )
@@ -89,10 +88,8 @@ async def lifespan(app: FastAPI):
         # Cancel the task
         task.cancel()
         # Wait for the task to be cancelled
-        try:
+        with suppress(asyncio.CancelledError):
             await task
-        except asyncio.CancelledError:
-            pass
 
 
 app = FastAPI(lifespan=lifespan)
@@ -189,4 +186,5 @@ async def handle_audio_message(
             sup_util=sup_util,
             config_obj=sup_util.config_obj,
             client_conf=client_conf,
+            logger=logger,
         )

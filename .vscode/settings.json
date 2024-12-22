@@ -10,11 +10,14 @@
         },
         "editor.defaultFormatter": "charliermarsh.ruff"
     },
-    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.defaultInterpreterPath": "/workspaces/.venv/bin/python",
     "python.testing.pytestArgs": [
         "tests"
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
-    "remote.localPortHost": "allInterfaces"
+    "remote.localPortHost": "allInterfaces",
+    "cSpell.files": [
+        "src"
+    ]
 }
