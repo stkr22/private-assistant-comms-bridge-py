@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "private-assistant-comms-bridge"
-version = "1.5.1"
+version = "1.5.2"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = [
     { name = "stkr22", email = "stkr22@github.com" }
@@ -26,13 +26,13 @@ dependencies = [
     "pyyaml>=6.0.1,<7.0.0",
     "pydantic>=2.7.3,<3.0.0",
     "private-assistant-commons>=2.0.0,<3.0.0",
-    "fastapi>=0.111.0,<1.0.0",
+    "fastapi[standard]>=0.113.0,<0.114.0",
     "speexdsp-ns>=0.1.2,<1.0.0",
     "numpy==1.26.4",
     "aiomqtt>=2.3.0,<3.0.0",
     "onnxruntime>=1.20.0,<2.0.0",
     "pysilero-vad>=2.0.0,<3.0.0",
-    "openWakeWord"
+    "openWakeWord",
 ]
 
 [tool.uv.sources]
