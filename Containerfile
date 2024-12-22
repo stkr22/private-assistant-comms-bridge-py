@@ -12,7 +12,8 @@ RUN groupadd -g 1000 appuser && useradd -m -u 1000 -g appuser -s /bin/bash appus
 # Copy and install the wheel file
 ARG WHEEL_FILE=my_wheel.whl
 COPY dist/${WHEEL_FILE} /tmp/${WHEEL_FILE}
-RUN pip install /tmp/${WHEEL_FILE} && rm /tmp/${WHEEL_FILE}
+RUN pip install /tmp/${WHEEL_FILE} && rm /tmp/${WHEEL_FILE} && \
+    pip install --force openwakeword@git+https://github.com/stkr22/openWakeWord.git@af84a81
 
 # Set up the application directory and permissions
 RUN mkdir -p /app && chown -R appuser:appuser /app
