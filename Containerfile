@@ -36,4 +36,4 @@ EXPOSE 8080
 HEALTHCHECK --interval=20s --timeout=20s --start-period=5s --retries=3 CMD ["curl", "--fail", "-so", "/dev/null", "http://127.0.0.1:8080/health"]
 
 # Start the application as the non-root user
-ENTRYPOINT ["uvicorn", "private_assistant_comms_bridge.main:app", "--host", "0.0.0.0", "--port", "8080"]
+ENTRYPOINT ["fastapi", "run" "private_assistant_comms_bridge.main:app", "--host", "0.0.0.0", "--port", "8080"]
