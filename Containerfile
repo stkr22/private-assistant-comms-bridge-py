@@ -4,7 +4,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 # Install uv.
-COPY --from=ghcr.io/astral-sh/uv:0.5.9 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.5.14 /uv /uvx /bin/
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
