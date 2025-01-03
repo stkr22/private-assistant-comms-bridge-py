@@ -36,7 +36,7 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-openWakeWord = {git = "https://github.com/stkr22/openWakeWord.git", rev = "af84a81"}
+openWakeWord = {git = "https://github.com/stkr22/openWakeWord.git", rev = "fb168ea71d5fb0f93ba8668107d51b57e8948a39"}
 
 [dependency-groups]
 dev = [
