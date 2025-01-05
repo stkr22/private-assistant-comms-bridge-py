@@ -167,3 +167,7 @@ def main(config_path: str = "config.yaml") -> None:
         pass
     finally:
         ws_manager.stop()
+
+
+if __name__ == "__main__":
+    main()

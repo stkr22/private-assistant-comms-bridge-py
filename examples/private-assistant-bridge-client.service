@@ -1,0 +1,13 @@
+[Unit]
+Description=Private Assistant Comms Bridge
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/assistant_bridge
+ExecStart=/home/ubuntu/assistant_bridge/.venv/bin/python /home/ubuntu/assistant_bridge/client.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
