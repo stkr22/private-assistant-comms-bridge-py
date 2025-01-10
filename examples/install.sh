@@ -4,3 +4,6 @@ cd ~/assistant-bridge
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+sudo vi /etc/systemd/system/private-assistant-bridge-client.service
+sudo systemctl enable --now private-assistant-bridge-client.service
+journalctl -f -u private-assistant-bridge-client

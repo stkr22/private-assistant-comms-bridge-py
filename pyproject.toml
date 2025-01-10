@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "app"
-version = "2.0.0"
+version = "2.0.1"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = [
     { name = "stkr22", email = "stkr22@github.com" }
@@ -22,16 +22,16 @@ classifiers = [
 
 requires-python = ">=3.11,<3.13"
 dependencies = [
-    "httpx>=0.27.0,<1.0.0",
-    "pyyaml>=6.0.1,<7.0.0",
-    "pydantic>=2.7.3,<3.0.0",
-    "private-assistant-commons>=3.0.0,<3.1.0",
-    "fastapi[standard]>=0.115.6,<0.116.0",
-    "speexdsp-ns>=0.1.2,<1.0.0",
+    "httpx~=0.27.0",
+    "pyyaml~=6.0.1",
+    "pydantic~=2.9.0",
+    "private-assistant-commons~=3.0.0",
+    "fastapi[standard]~=0.115.6",
+    "speexdsp-ns~=0.1.2",
     "numpy==1.26.4",
-    "aiomqtt>=2.3.0,<3.0.0",
-    "onnxruntime>=1.20.0,<2.0.0",
-    "pysilero-vad>=2.0.0,<3.0.0",
+    "aiomqtt~=2.3.0",
+    "onnxruntime~=1.20.0",
+    "pysilero-vad~=2.0.0",
     "openWakeWord",
 ]
 
@@ -40,12 +40,12 @@ openWakeWord = {git = "https://github.com/stkr22/openWakeWord.git", rev = "fb168
 
 [dependency-groups]
 dev = [
-    "ruff>=0.8.0",
-    "mypy>=1.11.0",
-    "pytest>=8.3.3",
-    "pytest-cov>=6.0.0",
-    "types-pyyaml>=6.0.12.20240311,<7.0.0",
-    "websockets>=14.1",
+    "ruff~=0.8.0",
+    "mypy~=1.11.0",
+    "pytest~=8.3.3",
+    "pytest-cov~=6.0.0",
+    "types-pyyaml~=6.0.12.20240311",
+    "websockets~=14.1",
 ]
 
 [[tool.mypy.overrides]]
