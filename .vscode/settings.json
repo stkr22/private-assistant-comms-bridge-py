@@ -16,8 +16,13 @@
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.pytestEnabled": true,
+<<<<<<< before updating
     "remote.localPortHost": "allInterfaces",
     "cSpell.files": [
         "app"
+=======
+    "cSpell.files": [
+        "src"
+>>>>>>> after updating
     ]
 }
