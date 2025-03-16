@@ -28,7 +28,7 @@ dependencies = [
     "private-assistant-commons~=3.0.0",
     "fastapi[standard]~=0.115.6",
     "speexdsp-ns~=0.1.2",
-    "numpy==1.26.4",
+    "numpy==2.2.4",
     "aiomqtt~=2.3.0",
     "onnxruntime~=1.20.0",
     "pysilero-vad~=2.0.0",
