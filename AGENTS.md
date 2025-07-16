@@ -1,7 +1,7 @@
 # AGENTS.md
-*Last updated 2025-07-15*  
+*Last updated 2025-07-15*
 
-> **purpose** – This file is the onboarding manual for every AI assistant (Claude, Cursor, GPT, etc.) and every human who edits this repository.  
+> **purpose** – This file is the onboarding manual for every AI assistant (Claude, Cursor, GPT, etc.) and every human who edits this repository.
 > It encodes coding standards, guard-rails, and workflow tricks so the *human 30 %* (architecture, tests, domain judgment) stays in human hands.[^1]
 
 ---
@@ -55,7 +55,7 @@ This is a **voice assistant communication bridge** for smart home systems, consi
 | G-5 | Stay within the current task context. Inform the dev if it'd be better to start afresh.                                  | ❌ Continue work from a prior prompt after "new task" – start a fresh session.      |
 
 ---
-## Critical Architecture Decisions 
+## Critical Architecture Decisions
 
 ---
 
@@ -116,7 +116,7 @@ source /workspaces/.venv/bin/activate
 
 ## 5. Anchor comments
 
-Add specially formatted comments throughout the codebase, where appropriate, for yourself as inline knowledge that can be easily `grep`ped for. 
+Add specially formatted comments throughout the codebase, where appropriate, for yourself as inline knowledge that can be easily `grep`ped for.
 
 ### Guidelines:
 
@@ -148,6 +148,7 @@ async def render_feed(...):
 *   **Clear commit messages**: Explain the *why*; link to issues/ADRs if architectural.
 *   **Use `git worktree`** for parallel/long-running AI branches (e.g., `git worktree add ../wip-foo -b wip-foo`).
 *   **Review AI-generated code**: Never merge code you don't understand.
+*   **Always use conventional commit standard**: e.g. "feat:" "fix:"
 
 ---
 
