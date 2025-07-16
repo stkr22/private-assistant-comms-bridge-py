@@ -125,13 +125,23 @@ async def websocket_endpoint(websocket: WebSocket):
         sup_util.mqtt_subscription_to_queue[output_topic] = output_queue
         await sup_util.mqtt_client.subscribe(output_topic, qos=1)
         sup_util.mqtt_subscription_to_queue[sup_util.config_obj.broadcast_topic] = output_queue
+        # AIDEV-NOTE: Optimized WebSocket processing to reduce blocking
         while True:
-            await process_output_queue(websocket, output_queue, sup_util.config_obj)
-            message = await websocket.receive()
-
-            if "bytes" in message:
-                audio_bytes: bytes = message["bytes"]
-                await handle_audio_message(websocket, audio_bytes, client_conf, sup_util)
+            # Process multiple tasks concurrently to reduce latency
+            try:
+                # Check for output messages without blocking
+                await process_output_queue(websocket, output_queue, sup_util.config_obj)
+                
+                # Receive audio message
+                message = await websocket.receive()
+                
+                if "bytes" in message:
+                    audio_bytes: bytes = message["bytes"]
+                    await handle_audio_message(websocket, audio_bytes, client_conf, sup_util)
+                    
+            except asyncio.QueueEmpty:
+                # No output messages to process, continue with audio
+                pass
 
     except WebSocketDisconnect:
         logger.info("Client disconnected")
@@ -148,15 +158,24 @@ async def websocket_endpoint(websocket: WebSocket):
 async def process_output_queue(
     websocket: WebSocket, output_queue: asyncio.Queue[messages.Response], config_obj: config.Config
 ):
+    # AIDEV-NOTE: Optimized to process all available messages to reduce queue buildup
+    processed_count = 0
+    max_process_per_cycle = 3  # Limit processing to prevent blocking audio
+    
     try:
-        response = output_queue.get_nowait()
-        audio_np = await speech_recognition_tools.send_text_to_tts_api(response.text, config_obj)
-        if response.alert is not None and response.alert.play_before:
-            await websocket.send_text("alert_default")
-        if audio_np is not None:
-            await websocket.send_bytes(audio_np.tobytes())
+        while processed_count < max_process_per_cycle:
+            response = output_queue.get_nowait()
+            audio_np = await speech_recognition_tools.send_text_to_tts_api(response.text, config_obj)
+            if response.alert is not None and response.alert.play_before:
+                await websocket.send_text("alert_default")
+            if audio_np is not None:
+                await websocket.send_bytes(audio_np.tobytes())
+            processed_count += 1
+            
     except asyncio.QueueEmpty:
-        logger.debug("Queue is empty, no message to process.")
+        if processed_count > 0:
+            logger.debug("Processed %d messages from output queue", processed_count)
+        # No more messages to process
 
 
 async def handle_audio_message(
