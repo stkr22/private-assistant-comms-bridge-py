@@ -12,12 +12,45 @@ Owner: stkr22
 
 ## Comms Bridge: Speech Processing for Edge Devices
 
-Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices. It utilizes Voice Activity Detection (VAD) and OpenWakeWord for efficient speech and wake word detection, enabling the device to listen and respond to verbal commands accurately.
+Comms Bridge is an open-source voice assistant communication bridge designed to facilitate speech interaction within smart home systems. It consists of a WebSocket-based server that processes audio streams and a client that handles local audio capture and playback.
 
-Key functionalities include:
+### Architecture
 
-- **Speech Recognition**: Captures audio upon wake word detection, converting speech to text using a speech-to-text API, and forwards the text to an MQTT server for processing.
-- **Voice Feedback**: Receives text from the MQTT server and converts it into speech with a text-to-speech API, providing an audible response to the user.
-- **Audio Handling**: Leverages the sounddevice library for high-quality audio recording and playback, ensuring seamless voice capture and output.
+The system follows a client-server architecture with the following components:
 
-Comms Bridge's architecture is designed for low-latency communication and privacy preservation, making it suitable for various applications, from smart homes to personal devices. Its modular design and open-source nature allow for customization and integration into existing smart systems.
+**Server (`app/main.py`):**
+- FastAPI-based WebSocket server that accepts single client connections
+- Integrates OpenWakeWord for wake word detection
+- Uses Silero VAD for voice activity detection
+- Handles speech-to-text (STT) and text-to-speech (TTS) API calls
+- Communicates with MQTT broker for assistant integration
+- Supports multiple wake word models (hey_loona, hey_nohvah, hey_nova)
+
+**Client (`examples/client.py`):**
+- PyAudio-based audio capture and playback
+- WebSocket client that streams audio to server
+- Handles sound effects for user feedback
+- Configurable audio parameters and device selection
+
+### Key Features
+
+- **Wake Word Detection**: Uses OpenWakeWord with configurable models and thresholds
+- **Voice Activity Detection**: Silero VAD for accurate speech detection
+- **Real-time Audio Processing**: Continuous audio streaming with low-latency processing
+- **MQTT Integration**: Publishes requests and receives responses via MQTT
+- **Audio Feedback**: Plays sound effects and TTS responses to user
+- **Room-based Routing**: Supports multiple rooms with topic-based message routing
+
+### Performance Characteristics
+
+The system is designed for low-latency voice interaction but may experience latency increases over time due to:
+- Continuous audio buffering without proper cleanup
+- WebSocket connection management overhead
+- MQTT message queuing and processing delays
+- External API call latencies for STT/TTS services
+
+### Configuration
+
+- Server configuration via YAML files with speech API endpoints and MQTT settings
+- Client configuration for audio devices, sample rates, and WebSocket connection
+- Support for environment-based configuration overrides
