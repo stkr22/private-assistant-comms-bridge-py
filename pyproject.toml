@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "app"
-version = "2.0.1"
+version = "2.0.2"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = [{ name = "stkr22", email = "stkr22@github.com" }]
 readme = "README.md"
