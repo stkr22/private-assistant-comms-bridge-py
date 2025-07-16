@@ -21,6 +21,8 @@ class AudioConfig:
     max_frames: int
     max_silent_packages: int
     vad_threshold: float
+    # AIDEV-NOTE: Added buffer size limits to prevent memory accumulation
+    max_buffer_size: int = 1024 * 1024  # 1MB max buffer size
 
 
 class AudioProcessor:
@@ -46,17 +48,41 @@ class AudioProcessor:
         self.audio_frames: np.ndarray | None = None
         self.silence_packages: int = 0
         self.logger = logger
+        # AIDEV-NOTE: Track buffer size to prevent memory accumulation
+        self._buffer_size_bytes: int = 0
 
     async def handle_voice_packet(self, data: np.ndarray) -> None:
+        # AIDEV-NOTE: Improved buffer management with size limits
         self.silence_packages = 0
-        self.audio_frames = data if self.audio_frames is None else np.concatenate((self.audio_frames, data))
-        self.logger.debug("Received voice...")
+        
+        if self.audio_frames is None:
+            self.audio_frames = data
+            self._buffer_size_bytes = data.nbytes
+        else:
+            # Check buffer size before concatenation to prevent memory issues
+            if self._buffer_size_bytes + data.nbytes > self.audio_config.max_buffer_size:
+                self.logger.warning("Audio buffer size limit reached, processing current audio")
+                await self.process_complete_audio()
+                return
+            
+            self.audio_frames = np.concatenate((self.audio_frames, data))
+            self._buffer_size_bytes += data.nbytes
+        
+        self.logger.debug("Received voice... (buffer size: %d bytes)", self._buffer_size_bytes)
 
     async def handle_silence_packet(self, data: np.ndarray) -> None:
+        # AIDEV-NOTE: Improved buffer management with size limits
         if self.audio_frames is not None:
+            # Check buffer size before concatenation
+            if self._buffer_size_bytes + data.nbytes > self.audio_config.max_buffer_size:
+                self.logger.warning("Audio buffer size limit reached during silence, processing current audio")
+                await self.process_complete_audio()
+                return
+            
             self.audio_frames = np.concatenate((self.audio_frames, data))
+            self._buffer_size_bytes += data.nbytes
             self.silence_packages += 1
-        self.logger.debug("No voice...")
+        self.logger.debug("No voice... (buffer size: %d bytes)", self._buffer_size_bytes)
 
     async def process_complete_audio(self) -> None:
         if self.audio_frames is None:
@@ -126,8 +152,11 @@ class AudioProcessor:
         )
 
     async def cleanup(self) -> None:
+        # AIDEV-NOTE: Enhanced cleanup to prevent memory leaks
         self.audio_frames = None
         self.silence_packages = 0
+        self._buffer_size_bytes = 0
+        self.logger.debug("Audio processor cleaned up")
 
 
 async def processing_spoken_commands(
