@@ -102,21 +102,22 @@ class WebSocketManager:
         await asyncio.gather(self._send_audio(ws), self._receive_commands(ws))
 
     async def _send_audio(self, ws: websockets.asyncio.client.ClientConnection) -> None:
-        # AIDEV-NOTE: Removed artificial sleep delay to reduce latency
         while self._running:
             audio_data = self.streams.input.read(self.config.chunk_size, exception_on_overflow=False)
             await ws.send(audio_data)
-            # Natural rate limiting from audio buffer read - no artificial delay needed
+            # Small yield to prevent blocking the event loop
+            await asyncio.sleep(0.001)
 
     async def _receive_commands(self, ws: websockets.asyncio.client.ClientConnection) -> None:
-        # AIDEV-NOTE: Removed artificial sleep delay to reduce latency
         while self._running:
-            message = await ws.recv()
-            if isinstance(message, bytes):
-                self.streams.output.write(message)
-            elif sound := self.sounds.get(message):
-                self.streams.output.write(sound)
-            # WebSocket recv() is naturally blocking - no artificial delay needed
+            try:
+                message = await ws.recv()
+                if isinstance(message, bytes):
+                    self.streams.output.write(message)
+                elif sound := self.sounds.get(message):
+                    self.streams.output.write(sound)
+            except websockets.ConnectionClosed:
+                break
 
     def _get_config_json(self) -> str:
         return json.dumps(
