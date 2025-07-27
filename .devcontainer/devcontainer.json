@@ -1,12 +1,12 @@
 {
 	"name": "private-assistant-comms-bridge-dev-environment",
-	"build":
-		{
-			"dockerfile": "Containerfile",
-			"context": "."
-		},
+	"build": {
+		"dockerfile": "Containerfile",
+		"context": "."
+	},
 	"features": {
-		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+		"ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {}
 	},
 	"customizations": {
 		"vscode": {
@@ -21,7 +21,7 @@
 				"github.vscode-github-actions",
 				"oderwat.indent-rainbow",
 				"mhutchie.git-graph",
-				"vivaxy.vscode-conventional-commits"
+				"vivaxy.vscode-conventional-commits",
 			],
 			"settings": {
 				"terminal.integrated.defaultProfile.linux": "zsh",

@@ -7,7 +7,7 @@ ENV UV_LINK_MODE=copy \
     PYTHONUNBUFFERED=1
 
 # Install uv.
-COPY --from=ghcr.io/astral-sh/uv:0.5.14@sha256:f0786ad49e2e684c18d38697facb229f538a6f5e374c56f54125aabe7d14b3f7 /uv /uvx /bin/
+COPY --from=ghcr.io/astral-sh/uv:0.5.21@sha256:a8d9b557b6cd6ede1842b0e03cd7ac26870e2c6b4eea4e10dab67cbd3145f8d9 /uv /uvx /bin/
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y libsndfile1 libspeexdsp-dev git && \
@@ -17,16 +17,12 @@ RUN apt-get update && apt-get install -y libsndfile1 libspeexdsp-dev git && \
 WORKDIR /app
 
 # Copy the application into the container.
-COPY pyproject.toml README.md uv.lock /app/
-COPY assets /app/assets
-COPY app /app/app
+COPY pyproject.toml uv.lock README.md ./
 
+# Install dependencies only (excluding the current package)
 RUN --mount=type=cache,target=/root/.cache \
-    cd /app && \
-    uv sync \
-        --frozen \
-        --no-group dev \
-        --group prod
+    uv venv && \
+    uv sync --frozen --no-dev --no-install-project
 
 # runtime stage: Python 3.12.8-slim-bookworm
 FROM docker.io/library/python:3.12.8-slim-bookworm@sha256:2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0
@@ -37,7 +33,11 @@ ENV PYTHONUNBUFFERED=1
 RUN addgroup --system --gid 1001 appuser && adduser --system --uid 1001 --no-create-home --ingroup appuser appuser
 
 WORKDIR /app
-COPY --from=build-python --chown=appuser:appuser /app /app
+# Copy virtual environment from build stage
+COPY --from=build-python /app/.venv /app/.venv
+
+COPY assets /app/assets
+COPY app /app/app
 
 ENV PATH="/app/.venv/bin:$PATH"
 

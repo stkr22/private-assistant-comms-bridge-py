@@ -34,13 +34,6 @@ This is a **voice assistant communication bridge** for smart home systems, consi
 - WebSocket connections maintain state that could accumulate
 - VAD and wake word models keep internal state
 
-### Architecture Pattern
-
-- **Single Client Connection**: Server accepts only one WebSocket client at a time
-- **Room-based Routing**: MQTT topics organized by room (e.g., `assistant/livingroom/output`)
-- **Async Processing**: Heavy use of asyncio for concurrent audio/MQTT handling
-- **API Integration**: External STT/TTS services via HTTP clients
-
 ---
 
 ## 1. Non-negotiable golden rules
@@ -57,11 +50,16 @@ This is a **voice assistant communication bridge** for smart home systems, consi
 ---
 ## Critical Architecture Decisions
 
+- **Single Client Connection**: Server accepts only one WebSocket client at a time
+- **Room-based Routing**: MQTT topics organized by room (e.g., `assistant/livingroom/output`)
+- **Async Processing**: Heavy use of asyncio for concurrent audio/MQTT handling
+- **API Integration**: External STT/TTS services via HTTP clients
+
 ---
 
 ## Tech Stack
 
-- **Language**: Python 3.11+
+- **Language**: Python 3.12+
 - **Package Manager**: UV (modern pip replacement)
 - **Dependency Management**: pyproject.toml with dependency groups
 - **Testing**: pytest with coverage
@@ -73,28 +71,31 @@ This is a **voice assistant communication bridge** for smart home systems, consi
 
 ## Coding standards
 
-*   **Python**: 3.12+, FastAPI, `async/await` preferred.
-*   **Formatting**: `ruff` enforces 96-char lines, double quotes, sorted imports. Standard `ruff` linter rules.
-*   **Typing**: Strict (Pydantic v2 models preferred); `from __future__ import annotations`.
-*   **Naming**: `snake_case` (functions/variables), `PascalCase` (classes), `SCREAMING_SNAKE` (constants).
-*   **Error Handling**: Typed exceptions; context managers for resources.
-*   **Documentation**: Google-style docstrings for public functions/classes.
-*   **Testing**: Separate test files matching source file patterns.
+- **Python**: 3.12+.
+- **Formatting**: `ruff` enforces 120-char lines, double quotes, sorted imports. Standard `ruff` linter rules.
+- **Typing**: Strict (Pydantic v2 models preferred); `from __future__ import annotations`.
+- **Naming**: `snake_case` (functions/variables), `PascalCase` (classes), `SCREAMING_SNAKE` (constants).
+- **Error Handling**: Typed exceptions; context managers for resources.
+- **Documentation**: Google-style docstrings for public functions/classes.
+- **Testing**: Separate test files matching source file patterns.
 
 **Error handling patterns**:
+
 - Use typed, hierarchical exceptions defined in `exceptions.py`
 - Catch specific exceptions, not general `Exception`
 - Use context managers for resources (database connections, file handles)
 - For async code, use `try/finally` to ensure cleanup
 
 ## Project Structure
-- `src/{{ python_package_distribution_name }}/`: Main package source
+
+- `src/`: Main package source
 - `tests/`: Test files (mirrors src structure)
-- `docs/`: Documentation source
+- `docs/`: Comprehensive documentation for users and developers
 - `.github/workflows/`: CI/CD workflows
-- `pyproject.toml`: Project configuration and dependencies
+- `pyproject.toml`: Project configuration and dependencies, and tool settings
 
 ## Environment Setup
+
 ```bash
 # Sync development environment
 uv sync --group dev
@@ -118,7 +119,7 @@ source /workspaces/.venv/bin/activate
 
 Add specially formatted comments throughout the codebase, where appropriate, for yourself as inline knowledge that can be easily `grep`ped for.
 
-### Guidelines:
+### Guidelines
 
 - Use `AIDEV-NOTE:`, `AIDEV-TODO:`, or `AIDEV-QUESTION:` (all-caps prefix) for comments aimed at AI and developers.
 - Keep them concise (≤ 120 chars).
@@ -126,13 +127,14 @@ Add specially formatted comments throughout the codebase, where appropriate, for
 - **Update relevant anchors** when modifying associated code.
 - **Do not remove `AIDEV-NOTE`s** without explicit human instruction.
 - Make sure to add relevant anchor comments, whenever a file or piece of code is:
-  * too long, or
-  * too complex, or
-  * very important, or
-  * confusing, or
-  * could have a bug unrelated to the task you are currently working on.
+  - too long, or
+  - too complex, or
+  - very important, or
+  - confusing, or
+  - could have a bug unrelated to the task you are currently working on.
 
 Example:
+
 ```python
 # AIDEV-NOTE: perf-hot-path; avoid extra allocations (see ADR-24)
 async def render_feed(...):
@@ -141,46 +143,38 @@ async def render_feed(...):
 
 ---
 
-## 6. Commit discipline
+## 6. Commit discipline - ALL AI AGENTS MUST FOLLOW THIS
 
-*   **Granular commits**: One logical change per commit.
-*   **Tag AI-generated commits**: e.g., `feat: optimise feed query [AI]`.
-*   **Clear commit messages**: Explain the *why*; link to issues/ADRs if architectural.
-*   **Use `git worktree`** for parallel/long-running AI branches (e.g., `git worktree add ../wip-foo -b wip-foo`).
-*   **Review AI-generated code**: Never merge code you don't understand.
-*   **Always use conventional commit standard**: e.g. "feat:" "fix:"
+- **Granular commits**: One logical change per commit. The LEAST is ONE commit per issue. CLAUDE stick to this!
+- **Tag AI-generated commits**: e.g., `feat: optimise feed query [AI]`.
+- **Clear commit messages**: Explain the *why*; link to issues/ADRs if architectural. If an issue is fixed reference it as closes #XX. One reference per issue.
+- **Use `git worktree`** for parallel/long-running AI branches (e.g., `git worktree add ../wip-foo -b wip-foo`).
+- **Review AI-generated code**: Never merge code you don't understand.
+- **Always use conventional commit standard with gitmoji**: e.g. "feat:" "perf: :zap:"
+- **Never commit to main**: Always work with separate branches and Pull Requests.
+- **NO attribution to Claude or any AI tool** - Never include "Generated by Claude" or any co-author information
 
 ---
 
 ## 10. Directory-Specific AGENTS.md Files
 
-*   **Always check for `AGENTS.md` files in specific directories** before working on code within them. These files contain targeted context.
-*   If a directory's `AGENTS.md` is outdated or incorrect, **update it**.
-*   If you make significant changes to a directory's structure, patterns, or critical implementation details, **document these in its `AGENTS.md`**.
-*   If a directory lacks a `AGENTS.md` but contains complex logic or patterns worth documenting for AI/humans, **suggest creating one**.
-
----
-
-## 12. Versioning conventions
-
-Semantic Versioning (SemVer: `MAJOR.MINOR.PATCH`) is generally followed, as specified in each component's `pyproject.toml` file.
-
-*   **MAJOR** version update: For incompatible API changes.
-*   **MINOR** version update: For adding functionality in a backward-compatible manner.
-*   **PATCH** version update: For backward-compatible bug fixes.
+- **Always check for `AGENTS.md` files in specific directories** before working on code within them. These files contain targeted context.
+- If a directory's `AGENTS.md` is outdated or incorrect, **update it**.
+- If you make significant changes to a directory's structure, patterns, or critical implementation details, **document these in its `AGENTS.md`**.
+- If a directory lacks a `AGENTS.md` but contains complex logic or patterns worth documenting for AI/humans, **suggest creating one**.
 
 ---
 
 ## 15. Meta: Guidelines for updating AGENTS.md files
 
-### Elements that would be helpful to add:
+### Elements that would be helpful to add
 
 1. **Decision flowchart**: A simple decision tree for "when to use X vs Y" for key architectural choices would guide my recommendations.
 2. **Reference links**: Links to key files or implementation examples that demonstrate best practices.
 3. **Domain-specific terminology**: A small glossary of project-specific terms would help me understand domain language correctly.
 4. **Versioning conventions**: How the project handles versioning, both for APIs and internal components.
 
-### Format preferences:
+### Format preferences
 
 1. **Consistent syntax highlighting**: Ensure all code blocks have proper language tags (`python`, `bash`, etc.).
 2. **Hierarchical organization**: Consider using hierarchical numbering for subsections to make referencing easier.
@@ -195,23 +189,23 @@ Semantic Versioning (SemVer: `MAJOR.MINOR.PATCH`) is generally followed, as spec
 
 These files control which files should be ignored by AI tools and indexing systems:
 
-*   @.agentignore : Specifies files that should be ignored by the Cursor IDE, including:
-    *   Build and distribution directories
-    *   Environment and configuration files
-    *   Large data files (parquet, arrow, pickle, etc.)
-    *   Generated documentation
-    *   Package-manager files (lock files)
-    *   Logs and cache directories
-    *   IDE and editor files
-    *   Compiled binaries and media files
+- @.agentignore : Specifies files that should be ignored by the Cursor IDE, including:
+  - Build and distribution directories
+  - Environment and configuration files
+  - Large data files (parquet, arrow, pickle, etc.)
+  - Generated documentation
+  - Package-manager files (lock files)
+  - Logs and cache directories
+  - IDE and editor files
+  - Compiled binaries and media files
 
-*   @.agentindexignore : Controls which files are excluded from Cursor's indexing to improve performance, including:
-    *   All files in `.agentignore`
-    *   Files that may contain sensitive information
-    *   Large JSON data files
-    *   Generated TypeSpec outputs
-    *   Memory-store migration files
-    *   Docker templates and configuration files
+- @.agentindexignore : Controls which files are excluded from Cursor's indexing to improve performance, including:
+  - All files in `.agentignore`
+  - Files that may contain sensitive information
+  - Large JSON data files
+  - Generated TypeSpec outputs
+  - Memory-store migration files
+  - Docker templates and configuration files
 
 **Never modify these ignore files** without explicit permission, as they're carefully configured to optimize IDE performance while ensuring all relevant code is properly indexed.
 
