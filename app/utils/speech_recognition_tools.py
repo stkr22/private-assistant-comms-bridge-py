@@ -58,29 +58,33 @@ async def send_audio_to_stt_api(
 async def send_text_to_tts_api(
     text: str,
     config_obj: config.Config,
+    sample_rate: int = 16000,
     timeout: float = 10.0,
-) -> np_typing.NDArray[np.int16] | None:
+) -> bytes | None:
     """Send text to TTS API and receive audio data."""
     headers = {
         "user-token": config_obj.speech_synthesis_api_token or "",
-        "accept": "audio/x-raw",
+        "Content-Type": "application/json",
     }
+
+    payload = {"text": text, "sample_rate": sample_rate}
 
     try:
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 url=config_obj.speech_synthesis_api,
-                json={"text": text},
+                json=payload,
                 headers=headers,
                 timeout=timeout,
             )
             response.raise_for_status()
 
-            if len(response.content) < 2:
+            min_audio_bytes = 2
+            if len(response.content) < min_audio_bytes:
                 logger.error("Insufficient audio data: %d bytes", len(response.content))
                 return None
 
-            return np.frombuffer(response.content, dtype=np.int16)
+            return response.content
 
     except httpx.TimeoutException:
         logger.error("Request timed out after %.1f seconds", timeout)

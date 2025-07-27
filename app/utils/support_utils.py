@@ -1,13 +1,18 @@
-import asyncio
+from __future__ import annotations
 
-import aiomqtt as mqtt
-import openwakeword
-from private_assistant_commons import messages
+from typing import TYPE_CHECKING
 
 from app.utils import (
     config,
     silero_vad,
 )
+
+if TYPE_CHECKING:
+    import asyncio
+    
+    import aiomqtt as mqtt
+    import openwakeword
+    from private_assistant_commons import messages
 
 
 class SupportUtils:

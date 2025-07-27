@@ -20,6 +20,7 @@ RUN SNIPPET="export PROMPT_COMMAND='history -a' && export HISTFILE=/commandhisto
 
 # Set environment variable to help with container orientation
 ENV DEVCONTAINER=true
+
 # Create Claude configuration directory
 RUN mkdir -p /home/vscode/.claude && \
     chown -R vscode:vscode /home/vscode/.claude
