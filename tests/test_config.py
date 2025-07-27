@@ -21,7 +21,8 @@ def test_load_valid_config():
     config = Config.model_validate(config_data)
 
     assert config.mqtt_server_host == "localhost"
-    assert config.mqtt_server_port == 1884
+    expected_mqtt_port = 1884
+    assert config.mqtt_server_port == expected_mqtt_port
     assert config.speech_transcription_api == "http://localhost/transcribe"
     assert config.speech_transcription_api_token == "DEBUG"
     assert config.speech_synthesis_api == "https://localhost/synthesizeSpeech"

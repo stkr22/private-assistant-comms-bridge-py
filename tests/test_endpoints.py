@@ -10,5 +10,6 @@ def test_accepts_connections_ready():
     sup_util.websocket_connected = False
 
     response = client.get("/acceptsConnections")
-    assert response.status_code == 200
+    expected_status_code = 200
+    assert response.status_code == expected_status_code
     assert response.json() == {"status": "ready"}
