@@ -37,7 +37,7 @@ WORKDIR /app
 COPY --from=build-python /app/.venv /app/.venv
 
 COPY assets /app/assets
-COPY app /app/app
+COPY src/app /app/app
 
 ENV PATH="/app/.venv/bin:$PATH"
 

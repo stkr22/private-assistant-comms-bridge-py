@@ -1,14 +1,17 @@
 [build-system]
-requires = ["hatchling", "hatch-vcs"]
-build-backend = "hatchling.build"
+requires = ["uv_build>=0.8.11,<0.9.0"]
+build-backend = "uv_build"
 
 [project]
 name = "app"
-dynamic = ["version"]
+version = "2.1.1"
 description = "Comms Bridge is an open-source endpoint designed to facilitate speech interaction within smart assistant systems, optimized for operation on edge devices."
 authors = [{ name = "stkr22", email = "stkr22@github.com" }]
 readme = "README.md"
-license = { text = "GNU General Public License v3.0" }
+license = "GPL-3.0"
+license-files = [
+    "LICENSE",
+]
 
 keywords = []
 classifiers = [
@@ -38,14 +41,12 @@ dependencies = [
 [tool.uv.sources]
 openWakeWord = { git = "https://github.com/stkr22/openWakeWord.git", rev = "fb168ea71d5fb0f93ba8668107d51b57e8948a39" }
 
-
 [project.urls]
 Homepage = "https://github.com/stkr22/private-assistant-comms-bridge-py"
 Repository = "https://github.com/stkr22/private-assistant-comms-bridge-py"
 Documentation = "https://github.com/stkr22/private-assistant-comms-bridge-py/tree/main/docs"
 Issues = "https://github.com/stkr22/private-assistant-comms-bridge-py/issues"
 Changelog = "https://github.com/stkr22/private-assistant-comms-bridge-py/blob/main/CHANGELOG.md"
-
 
 [dependency-groups]
 dev = [
@@ -64,14 +65,7 @@ dev = [
 module = ["openwakeword.*", "pyaudio.*"]
 ignore_missing_imports = true
 
-[tool.hatch.version]
-source = "vcs"
-
-[tool.hatch.build.targets.wheel.hooks.vcs]
-version-file = "app/_version.py"
-
 [tool.ruff]
-target-version = "py311"
 line-length = 120
 indent-width = 4
 
@@ -100,7 +94,6 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.mypy]
-python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 
